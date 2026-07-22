@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Casa Cinghiala</title>
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#4f46e5">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <!-- Firebase SDK Compatibile -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 font-sans pb-12 select-none">
+
+  <div class="max-w-md mx-auto space-y-6">
+    
+    <header class="text-center py-2 px-2">
+      <h1 class="text-2xl font-black text-slate-800 tracking-tight leading-tight">
+        🐗 Casa Cinghiala
+      </h1>
+      <p class="text-[10px] font-bold text-indigo-600 mt-1 uppercase tracking-wider">
+        Luogo di Venerazione del Sacro Capriolo Pistolero 🦌🔫
+      </p>
+    </header>
+
+    <!-- CHI C'È A CASA -->
+    <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
+      <div class="flex justify-between items-center">
+        <h2 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-users text-indigo-500"></i> Chi c'è a casa?
+        </h2>
+        <button onclick="openAvatarModal()" class="text-xs text-indigo-600 font-bold hover:underline bg-indigo-50 px-2 py-1 rounded-lg">
+          + Aggiungi
+        </button>
+      </div>
+      <div id="roommates-list" class="flex flex-wrap gap-2 min-h-[40px] items-center">
+        <p class="text-xs text-slate-400 italic">Caricamento...</p>
+      </div>
+    </section>
+
+    <!-- GRIGLIA PULSANTI DI STATO -->
+    <div class="grid grid-cols-2 gap-3">
+      
+      <!-- Spesa -->
+      <div class="relative">
+        <button onclick="changeStatus('spesa')" id="btn-spesa" class="status-btn w-full bg-emerald-500 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95 pb-10">
+          <i class="fa-solid fa-cart-shopping text-3xl"></i>
+          <span class="font-bold text-base">Spesa</span>
+          <span class="status-text text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">Tutto OK</span>
+        </button>
+        <button onclick="openShoppingList()" class="absolute bottom-2 left-2 right-2 bg-black/20 active:bg-black/40 text-white text-xs font-semibold py-1 rounded-xl backdrop-blur-md transition-all flex items-center justify-center gap-1">
+          <i class="fa-solid fa-list-check"></i> Apri Lista
+        </button>
+      </div>
+
+      <!-- Monnezza -->
+      <button onclick="changeStatus('monnezza')" id="btn-monnezza" class="status-btn bg-emerald-500 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
+        <i class="fa-solid fa-trash-can text-3xl"></i>
+        <span class="font-bold text-base">Monnezza</span>
+        <span class="status-text text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">Tutto OK</span>
+      </button>
+
+      <!-- Orto -->
+      <button onclick="changeStatus('orto')" id="btn-orto" class="status-btn bg-emerald-500 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
+        <i class="fa-solid fa-seedling text-3xl"></i>
+        <span class="font-bold text-base">Orto</span>
+        <span class="status-text text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">Tutto OK</span>
+      </button>
+
+      <!-- Pulizie -->
+      <button onclick="openCleaningModal()" class="bg-violet-600 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
+        <i class="fa-solid fa-broom text-3xl"></i>
+        <span class="font-bold text-base">Pulizie</span>
+        <span id="cleaning-summary" class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">...</span>
+      </button>
+
+    </div>
+
+    <!-- MODALE LISTA DELLA SPESA -->
+    <div id="shopping-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b pb-2">
+          <h2 class="text-lg font-bold text-slate-800">🛒 Lista della Spesa</h2>
+          <button onclick="closeShoppingList()" class="text-slate-400 hover:text-slate-600 p-1">
+            <i class="fa-solid fa-xmark text-xl"></i>
+          </button>
+        </div>
+        <div class="flex gap-2">
+          <input type="text" id="item-input" placeholder="Es. Latte, Carta igienica..." class="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <button onclick="addItem()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold active:bg-indigo-700">Aggiungi</button>
+        </div>
+        <ul id="shopping-list" class="space-y-2 max-h-60 overflow-y-auto"></ul>
+      </div>
+    </div>
+
+    <!-- MODALE TURNI PULIZIE -->
+    <div id="cleaning-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b pb-2">
+          <div>
+            <h2 class="text-lg font-bold text-slate-800">🧹 Turni Pulizie</h2>
+            <p class="text-[11px] text-slate-500">Tocca ogni turno per cambiarne lo stato</p>
+          </div>
+          <button onclick="closeCleaningModal()" class="text-slate-400 hover:text-slate-600 p-1">
+            <i class="fa-solid fa-xmark text-xl"></i>
+          </button>
+        </div>
+        <div id="cleaning-tasks-container" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- MODALE AGGIUNGI COINQUILINO -->
+    <div id="avatar-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b pb-2">
+          <h2 class="text-lg font-bold text-slate-800">👤 Aggiungi Coinquilino</h2>
+          <button onclick="closeAvatarModal()" class="text-slate-400 hover:text-slate-600 p-1">
+            <i class="fa-solid fa-xmark text-xl"></i>
+          </button>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Nome</label>
+            <input type="text" id="roommate-name" placeholder="Es. Marco" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Scegli la tua Emoji Avatar</label>
+            <div id="emoji-picker" class="grid grid-cols-6 gap-2 text-2xl max-h-48 overflow-y-auto p-1 border border-slate-200 rounded-xl">
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-indigo-500">🐗</span>
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🦌</span>
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐶</span>
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐱</span>
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🦊</span>
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐼</span>
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐸</span>
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐵</span>
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🤠</span>
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🥷</span>
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🍕</span>
+              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🍺</span>
+            </div>
+          </div>
+          <button onclick="addRoommate()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-indigo-700">Salva Coinquilino</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // === CONFIGURAZIONE FIREBASE INSERITA ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyDC6wlqz4ARaREum8gXiklq1GvyF1JdpgQ",
+      authDomain: "casa-cinghiala.firebaseapp.com",
+      projectId: "casa-cinghiala",
+      storageBucket: "casa-cinghiala.firebasestorage.app",
+      messagingSenderId: "274673117994",
+      appId: "1:274673117994:web:a2d31710afdc0c2dd14c53"
+    };
+
+    // Inizializzazione
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const states = [
+      { color: 'bg-emerald-500', text: 'Tutto OK' },
+      { color: 'bg-rose-500', text: 'Da Fare' },
+      { color: 'bg-amber-500', text: 'In Corso' }
+    ];
+
+    const cleaningList = [
+      { id: 'pavimenti', name: 'Pavimenti', icon: 'fa-rug' },
+      { id: 'cucina', name: 'Cucina', icon: 'fa-kitchen-set' },
+      { id: 'bagni', name: 'Bagni', icon: 'fa-bath' },
+      { id: 'fuori', name: 'Fuori (Balcone/Terrazzo)', icon: 'fa-sun' },
+      { id: 'salone', name: 'Salone', icon: 'fa-couch' }
+    ];
+
+    let currentStatusData = {};
+
+    // 1. ASCOLTA CAMBIAMENTI DI STATO (In Tempo Reale)
+    db.collection('casa').doc('stati').onSnapshot(doc => {
+      if (doc.exists) {
+        currentStatusData = doc.data();
+        updateUI();
+      } else {
+        // Valori iniziali predefiniti se la stanza è nuova
+        db.collection('casa').doc('stati').set({
+          spesa: 0, monnezza: 0, orto: 0,
+          cleaning: { pavimenti: 0, cucina: 0, bagni: 0, fuori: 0, salone: 0 }
+        });
+      }
+    });
+
+    function updateUI() {
+      ['spesa', 'monnezza', 'orto'].forEach(key => {
+        const btn = document.getElementById(`btn-${key}`);
+        if (!btn) return;
+        const index = currentStatusData[key] || 0;
+        btn.className = btn.className.replace(/bg-(emerald|rose|amber)-500/g, states[index].color);
+        btn.querySelector('.status-text').innerText = states[index].text;
+      });
+
+      // Aggiorna Turni Pulizie
+      const container = document.getElementById('cleaning-tasks-container');
+      container.innerHTML = '';
+      let doneCount = 0;
+      const cleanData = currentStatusData.cleaning || {};
+
+      cleaningList.forEach(task => {
+        const stateIdx = cleanData[task.id] || 0;
+        if (stateIdx === 0) doneCount++;
+
+        const div = document.createElement('div');
+        div.className = `flex justify-between items-center ${states[stateIdx].color} text-white p-3 rounded-xl cursor-pointer active:scale-98 transition-all`;
+        div.onclick = () => changeCleaningTask(task.id);
+        div.innerHTML = `
+          <div class="flex items-center gap-3">
+            <i class="fa-solid ${task.icon} text-lg w-5 text-center"></i>
+            <span class="font-bold text-sm">${task.name}</span>
+          </div>
+          <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
+        `;
+        container.appendChild(div);
+      });
+
+      document.getElementById('cleaning-summary').innerText = `${doneCount}/5 Fatti`;
+    }
+
+    function changeStatus(key) {
+      const nextIdx = ((currentStatusData[key] || 0) + 1) % states.length;
+      db.collection('casa').doc('stati').update({ [key]: nextIdx });
+    }
+
+    function changeCleaningTask(taskId) {
+      const currentClean = currentStatusData.cleaning || {};
+      const nextIdx = ((currentClean[taskId] || 0) + 1) % states.length;
+      currentClean[taskId] = nextIdx;
+      db.collection('casa').doc('stati').update({ cleaning: currentClean });
+    }
+
+    // 2. ASCOLTA LISTA SPESA (In Tempo Reale)
+    db.collection('spesa').onSnapshot(snapshot => {
+      const list = document.getElementById('shopping-list');
+      list.innerHTML = '';
+      snapshot.forEach(doc => {
+        const item = doc.data();
+        const li = document.createElement('li');
+        li.className = "flex justify-between items-center bg-slate-50 p-2.5 rounded-xl text-sm border border-slate-200";
+        li.innerHTML = `
+          <span onclick="toggleItemDone('${doc.id}', ${!item.done})" class="cursor-pointer font-medium ${item.done ? 'line-through text-slate-400' : 'text-slate-700'}">${item.text}</span>
+          <button onclick="deleteItem('${doc.id}')" class="text-rose-500 hover:text-rose-700 px-2"><i class="fa-solid fa-trash"></i></button>
+        `;
+        list.appendChild(li);
+      });
+    });
+
+    function addItem() {
+      const input = document.getElementById('item-input');
+      const text = input.value.trim();
+      if (!text) return;
+      db.collection('spesa').add({ text: text, done: false, createdAt: Date.now() });
+      input.value = '';
+    }
+
+    function toggleItemDone(id, status) { db.collection('spesa').doc(id).update({ done: status }); }
+    function deleteItem(id) { db.collection('spesa').doc(id).delete(); }
+
+    // 3. ASCOLTA COINQUILINI E PRESENZA (In Tempo Reale)
+    db.collection('coinquilini').onSnapshot(snapshot => {
+      const roommatesList = document.getElementById('roommates-list');
+      roommatesList.innerHTML = '';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const card = document.createElement('div');
+        
+        if (data.inHouse) {
+          card.className = "flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full cursor-pointer transition-all active:scale-95";
+          card.innerHTML = `
+            <span class="text-lg">${data.emoji}</span>
+            <span class="text-xs font-bold text-emerald-800">${data.name}</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          `;
+        } else {
+          card.className = "flex items-center gap-1.5 bg-slate-100 border border-slate-200 opacity-50 px-3 py-1.5 rounded-full cursor-pointer transition-all active:scale-95";
+          card.innerHTML = `
+            <span class="text-lg">${data.emoji}</span>
+            <span class="text-xs font-bold text-slate-500">${data.name}</span>
+            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+          `;
+        }
+        card.onclick = () => db.collection('coinquilini').doc(doc.id).update({ inHouse: !data.inHouse });
+        roommatesList.appendChild(card);
+      });
+    });
+
+    let selectedEmoji = '🐗';
+    function selectEmoji(el) {
+      document.querySelectorAll('#emoji-picker span').forEach(s => s.classList.replace('border-indigo-500', 'border-transparent'));
+      el.classList.replace('border-transparent', 'border-indigo-500');
+      selectedEmoji = el.innerText;
+    }
+
+    function addRoommate() {
+      const nameInput = document.getElementById('roommate-name');
+      const name = nameInput.value.trim();
+      if (!name) return;
+      db.collection('coinquilini').add({ name: name, emoji: selectedEmoji, inHouse: true });
+      nameInput.value = '';
+      closeAvatarModal();
+    }
+
+    // Gestione Modali
+    function openShoppingList() { document.getElementById('shopping-modal').classList.replace('hidden', 'flex'); }
+    function closeShoppingList() { document.getElementById('shopping-modal').classList.replace('flex', 'hidden'); }
+    function openCleaningModal() { document.getElementById('cleaning-modal').classList.replace('hidden', 'flex'); }
+    function closeCleaningModal() { document.getElementById('cleaning-modal').classList.replace('flex', 'hidden'); }
+    function openAvatarModal() { document.getElementById('avatar-modal').classList.replace('hidden', 'flex'); }
+    function closeAvatarModal() { document.getElementById('avatar-modal').classList.replace('flex', 'hidden'); }
+  </script>
+</body>
+</html>
