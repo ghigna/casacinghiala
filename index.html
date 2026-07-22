@@ -10,15 +10,15 @@
   <meta name="theme-color" content="#4f46e5">
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- Firebase SDK (Versione Compatibile Esterna) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 font-sans pb-12 select-none">
+<body class="bg-slate-100 min-h-screen p-4 font-sans pb-16 select-none">
 
-  <!-- Banner Errore Firebase (Nascosto di default) -->
+  <!-- Banner Errore -->
   <div id="error-banner" class="hidden max-w-md mx-auto mb-4 bg-rose-500 text-white p-3 rounded-xl text-xs font-bold text-center shadow-lg"></div>
 
   <div class="max-w-md mx-auto space-y-6">
@@ -47,43 +47,15 @@
       </div>
     </section>
 
-    <!-- GRIGLIA PULSANTI DI STATO -->
-    <div class="grid grid-cols-2 gap-3">
-      
-      <!-- Spesa -->
-      <div class="relative">
-        <button onclick="changeStatus('spesa')" id="btn-spesa" class="status-btn w-full bg-emerald-500 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95 pb-10">
-          <i class="fa-solid fa-cart-shopping text-3xl"></i>
-          <span class="font-bold text-base">Spesa</span>
-          <span class="status-text text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">Tutto OK</span>
-        </button>
-        <button onclick="openShoppingList()" class="absolute bottom-2 left-2 right-2 bg-black/20 active:bg-black/40 text-white text-xs font-semibold py-1 rounded-xl backdrop-blur-md transition-all flex items-center justify-center gap-1">
-          <i class="fa-solid fa-list-check"></i> Apri Lista
-        </button>
-      </div>
-
-      <!-- Monnezza -->
-      <button onclick="changeStatus('monnezza')" id="btn-monnezza" class="status-btn bg-emerald-500 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
-        <i class="fa-solid fa-trash-can text-3xl"></i>
-        <span class="font-bold text-base">Monnezza</span>
-        <span class="status-text text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">Tutto OK</span>
-      </button>
-
-      <!-- Orto -->
-      <button onclick="changeStatus('orto')" id="btn-orto" class="status-btn bg-emerald-500 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
-        <i class="fa-solid fa-seedling text-3xl"></i>
-        <span class="font-bold text-base">Orto</span>
-        <span class="status-text text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">Tutto OK</span>
-      </button>
-
-      <!-- Pulizie -->
-      <button onclick="openCleaningModal()" class="bg-violet-600 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
-        <i class="fa-solid fa-broom text-3xl"></i>
-        <span class="font-bold text-base">Pulizie</span>
-        <span id="cleaning-summary" class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">...</span>
-      </button>
-
+    <!-- GRIGLIA PULSANTI DINAMICI -->
+    <div id="status-grid" class="grid grid-cols-2 gap-3">
+      <!-- I pulsanti e le schede verranno generati dinamicamente qui -->
     </div>
+
+    <!-- BOTTONE AGGIUNGI NUOVO TAB -->
+    <button onclick="openCustomTabModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
+      <i class="fa-solid fa-plus-circle text-lg"></i> Aggiungi Nuovo Tab (Es. Gatti)
+    </button>
 
     <!-- MODALE LISTA DELLA SPESA -->
     <div id="shopping-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
@@ -154,10 +126,43 @@
       </div>
     </div>
 
+    <!-- MODALE CREA TAB PERSONALIZZATO -->
+    <div id="custom-tab-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b pb-2">
+          <h2 class="text-lg font-bold text-slate-800">➕ Nuovo Tab Personalizzato</h2>
+          <button onclick="closeCustomTabModal()" class="text-slate-400 hover:text-slate-600 p-1">
+            <i class="fa-solid fa-xmark text-xl"></i>
+          </button>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Nome Scheda</label>
+            <input type="text" id="tab-name" placeholder="Es. Cibo Gatti, Piante..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Scegli Icona</label>
+            <div id="icon-picker" class="grid grid-cols-5 gap-2 text-xl p-1 border border-slate-200 rounded-xl">
+              <span onclick="selectIcon(this, 'fa-cat')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-indigo-500"><i class="fa-solid fa-cat"></i></span>
+              <span onclick="selectIcon(this, 'fa-dog')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-dog"></i></span>
+              <span onclick="selectIcon(this, 'fa-plant-wilt')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-plant-wilt"></i></span>
+              <span onclick="selectIcon(this, 'fa-envelope')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-envelope"></i></span>
+              <span onclick="selectIcon(this, 'fa-bolt')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-bolt"></i></span>
+              <span onclick="selectIcon(this, 'fa-car')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-car"></i></span>
+              <span onclick="selectIcon(this, 'fa-wifi')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-wifi"></i></span>
+              <span onclick="selectIcon(this, 'fa-wine-glass')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-wine-glass"></i></span>
+              <span onclick="selectIcon(this, 'fa-bell')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-bell"></i></span>
+              <span onclick="selectIcon(this, 'fa-star')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-star"></i></span>
+            </div>
+          </div>
+          <button onclick="saveCustomTab()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-emerald-700">Crea Scheda</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
-    // CREDENZIALI FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyDC6wlqz4ARaREum8gXiklq1GvyF1JdpgQ",
       authDomain: "casa-cinghiala.firebaseapp.com",
@@ -176,7 +181,7 @@
     try {
       firebase.initializeApp(firebaseConfig);
     } catch (e) {
-      showError("Errore Inizializzazione Firebase: " + e.message);
+      showError("Errore Inizializzazione: " + e.message);
     }
 
     const db = firebase.firestore();
@@ -185,6 +190,13 @@
       { color: 'bg-emerald-500', text: 'Tutto OK' },
       { color: 'bg-rose-500', text: 'Da Fare' },
       { color: 'bg-amber-500', text: 'In Corso' }
+    ];
+
+    const defaultTabs = [
+      { id: 'spesa', name: 'Spesa', icon: 'fa-cart-shopping', isSpecial: 'spesa' },
+      { id: 'monnezza', name: 'Monnezza', icon: 'fa-trash-can' },
+      { id: 'orto', name: 'Orto', icon: 'fa-seedling' },
+      { id: 'pulizie', name: 'Pulizie', icon: 'fa-broom', isSpecial: 'pulizie' }
     ];
 
     const cleaningList = [
@@ -196,40 +208,121 @@
     ];
 
     let currentStatusData = {};
+    let customTabsList = [];
 
-    // 1. STATI
+    // 1. ASCOLTA TAB E STATI
     db.collection('casa').doc('stati').onSnapshot(doc => {
       if (doc.exists) {
         currentStatusData = doc.data();
-        updateUI();
+        customTabsList = currentStatusData.customTabs || [];
+        renderGrid();
       } else {
         db.collection('casa').doc('stati').set({
           spesa: 0, monnezza: 0, orto: 0,
-          cleaning: { pavimenti: 0, cucina: 0, bagni: 0, fuori: 0, salone: 0 }
-        }).catch(err => showError("Errore Permessi Firebase: Imposta le Regole su 'allow read, write: if true;'"));
+          cleaning: { pavimenti: 0, cucina: 0, bagni: 0, fuori: 0, salone: 0 },
+          customTabs: []
+        }).catch(err => showError("Errore Permessi: Controlla le regole Firestore!"));
       }
-    }, err => {
-      showError("Errore Firebase: " + err.message);
-    });
+    }, err => showError("Errore Firebase: " + err.message));
 
-    function updateUI() {
-      ['spesa', 'monnezza', 'orto'].forEach(key => {
-        const btn = document.getElementById(`btn-${key}`);
-        if (!btn) return;
-        const index = currentStatusData[key] || 0;
-        btn.className = btn.className.replace(/bg-(emerald|rose|amber)-500/g, states[index].color);
-        btn.querySelector('.status-text').innerText = states[index].text;
+    function renderGrid() {
+      const grid = document.getElementById('status-grid');
+      grid.innerHTML = '';
+
+      const allTabs = [...defaultTabs, ...customTabsList];
+
+      allTabs.forEach(tab => {
+        const stateIdx = currentStatusData[tab.id] || 0;
+        const col = document.createElement('div');
+        col.className = 'relative';
+
+        if (tab.isSpecial === 'spesa') {
+          col.innerHTML = `
+            <button onclick="changeStatus('${tab.id}')" class="w-full ${states[stateIdx].color} text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95 pb-10">
+              <i class="fa-solid ${tab.icon} text-3xl"></i>
+              <span class="font-bold text-base">${tab.name}</span>
+              <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
+            </button>
+            <button onclick="openShoppingList()" class="absolute bottom-2 left-2 right-2 bg-black/20 active:bg-black/40 text-white text-xs font-semibold py-1 rounded-xl backdrop-blur-md transition-all flex items-center justify-center gap-1">
+              <i class="fa-solid fa-list-check"></i> Apri Lista
+            </button>
+          `;
+        } else if (tab.isSpecial === 'pulizie') {
+          let doneCount = 0;
+          const cleanData = currentStatusData.cleaning || {};
+          cleaningList.forEach(t => { if ((cleanData[t.id] || 0) === 0) doneCount++; });
+
+          col.innerHTML = `
+            <button onclick="openCleaningModal()" class="w-full bg-violet-600 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
+              <i class="fa-solid ${tab.icon} text-3xl"></i>
+              <span class="font-bold text-base">${tab.name}</span>
+              <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${doneCount}/5 Fatti</span>
+            </button>
+          `;
+        } else {
+          // Tab Generico / Personalizzato
+          const isCustom = !defaultTabs.some(d => d.id === tab.id);
+          col.innerHTML = `
+            <button onclick="changeStatus('${tab.id}')" class="w-full ${states[stateIdx].color} text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
+              <i class="fa-solid ${tab.icon} text-3xl"></i>
+              <span class="font-bold text-base">${tab.name}</span>
+              <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
+            </button>
+            ${isCustom ? `<button onclick="deleteCustomTab('${tab.id}')" class="absolute top-2 right-2 text-white/50 hover:text-white p-1 text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}
+          `;
+        }
+
+        grid.appendChild(col);
       });
 
+      renderCleaningModalList();
+    }
+
+    function changeStatus(key) {
+      const nextIdx = ((currentStatusData[key] || 0) + 1) % states.length;
+      db.collection('casa').doc('stati').update({ [key]: nextIdx });
+    }
+
+    // 2. CREA/ELIMINA TAB PERSONALIZZATO
+    let selectedIconClass = 'fa-cat';
+    function selectIcon(el, iconClass) {
+      document.querySelectorAll('#icon-picker span').forEach(s => s.classList.replace('border-indigo-500', 'border-transparent'));
+      el.classList.replace('border-transparent', 'border-indigo-500');
+      selectedIconClass = iconClass;
+    }
+
+    function saveCustomTab() {
+      const nameInput = document.getElementById('tab-name');
+      const name = nameInput.value.trim();
+      if (!name) return;
+
+      const newId = 'tab_' + Date.now();
+      const updatedCustomTabs = [...customTabsList, { id: newId, name: name, icon: selectedIconClass }];
+
+      db.collection('casa').doc('stati').update({
+        customTabs: updatedCustomTabs,
+        [newId]: 0
+      });
+
+      nameInput.value = '';
+      closeCustomTabModal();
+    }
+
+    function deleteCustomTab(id) {
+      if (!confirm("Vuoi eliminare questa scheda?")) return;
+      const updatedCustomTabs = customTabsList.filter(t => t.id !== id);
+      db.collection('casa').doc('stati').update({ customTabs: updatedCustomTabs });
+    }
+
+    // 3. CLEANING LIST
+    function renderCleaningModalList() {
       const container = document.getElementById('cleaning-tasks-container');
+      if (!container) return;
       container.innerHTML = '';
-      let doneCount = 0;
       const cleanData = currentStatusData.cleaning || {};
 
       cleaningList.forEach(task => {
         const stateIdx = cleanData[task.id] || 0;
-        if (stateIdx === 0) doneCount++;
-
         const div = document.createElement('div');
         div.className = `flex justify-between items-center ${states[stateIdx].color} text-white p-3 rounded-xl cursor-pointer active:scale-98 transition-all`;
         div.onclick = () => changeCleaningTask(task.id);
@@ -242,13 +335,6 @@
         `;
         container.appendChild(div);
       });
-
-      document.getElementById('cleaning-summary').innerText = `${doneCount}/5 Fatti`;
-    }
-
-    function changeStatus(key) {
-      const nextIdx = ((currentStatusData[key] || 0) + 1) % states.length;
-      db.collection('casa').doc('stati').update({ [key]: nextIdx });
     }
 
     function changeCleaningTask(taskId) {
@@ -258,7 +344,7 @@
       db.collection('casa').doc('stati').update({ cleaning: currentClean });
     }
 
-    // 2. SPESA
+    // 4. SPESA
     db.collection('spesa').onSnapshot(snapshot => {
       const list = document.getElementById('shopping-list');
       list.innerHTML = '';
@@ -285,7 +371,7 @@
     function toggleItemDone(id, status) { db.collection('spesa').doc(id).update({ done: status }); }
     function deleteItem(id) { db.collection('spesa').doc(id).delete(); }
 
-    // 3. COINQUILINI
+    // 5. COINQUILINI
     db.collection('coinquilini').onSnapshot(snapshot => {
       const roommatesList = document.getElementById('roommates-list');
       roommatesList.innerHTML = '';
@@ -329,13 +415,15 @@
       closeAvatarModal();
     }
 
-    // Modali
+    // Gestione Modali
     function openShoppingList() { document.getElementById('shopping-modal').classList.replace('hidden', 'flex'); }
     function closeShoppingList() { document.getElementById('shopping-modal').classList.replace('flex', 'hidden'); }
     function openCleaningModal() { document.getElementById('cleaning-modal').classList.replace('hidden', 'flex'); }
     function closeCleaningModal() { document.getElementById('cleaning-modal').classList.replace('flex', 'hidden'); }
     function openAvatarModal() { document.getElementById('avatar-modal').classList.replace('hidden', 'flex'); }
     function closeAvatarModal() { document.getElementById('avatar-modal').classList.replace('flex', 'hidden'); }
+    function openCustomTabModal() { document.getElementById('custom-tab-modal').classList.replace('hidden', 'flex'); }
+    function closeCustomTabModal() { document.getElementById('custom-tab-modal').classList.replace('flex', 'hidden'); }
   </script>
 </body>
 </html>
