@@ -12,11 +12,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-  <!-- Firebase SDK Compatibile -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <!-- Firebase SDK (Versione Compatibile Esterna) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 font-sans pb-12 select-none">
+
+  <!-- Banner Errore Firebase (Nascosto di default) -->
+  <div id="error-banner" class="hidden max-w-md mx-auto mb-4 bg-rose-500 text-white p-3 rounded-xl text-xs font-bold text-center shadow-lg"></div>
 
   <div class="max-w-md mx-auto space-y-6">
     
@@ -154,7 +157,7 @@
   </div>
 
   <script>
-    // === CONFIGURAZIONE FIREBASE INSERITA ===
+    // CREDENZIALI FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyDC6wlqz4ARaREum8gXiklq1GvyF1JdpgQ",
       authDomain: "casa-cinghiala.firebaseapp.com",
@@ -164,8 +167,18 @@
       appId: "1:274673117994:web:a2d31710afdc0c2dd14c53"
     };
 
-    // Inizializzazione
-    firebase.initializeApp(firebaseConfig);
+    function showError(msg) {
+      const banner = document.getElementById('error-banner');
+      banner.innerText = msg;
+      banner.classList.remove('hidden');
+    }
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+    } catch (e) {
+      showError("Errore Inizializzazione Firebase: " + e.message);
+    }
+
     const db = firebase.firestore();
 
     const states = [
@@ -184,18 +197,19 @@
 
     let currentStatusData = {};
 
-    // 1. ASCOLTA CAMBIAMENTI DI STATO (In Tempo Reale)
+    // 1. STATI
     db.collection('casa').doc('stati').onSnapshot(doc => {
       if (doc.exists) {
         currentStatusData = doc.data();
         updateUI();
       } else {
-        // Valori iniziali predefiniti se la stanza è nuova
         db.collection('casa').doc('stati').set({
           spesa: 0, monnezza: 0, orto: 0,
           cleaning: { pavimenti: 0, cucina: 0, bagni: 0, fuori: 0, salone: 0 }
-        });
+        }).catch(err => showError("Errore Permessi Firebase: Imposta le Regole su 'allow read, write: if true;'"));
       }
+    }, err => {
+      showError("Errore Firebase: " + err.message);
     });
 
     function updateUI() {
@@ -207,7 +221,6 @@
         btn.querySelector('.status-text').innerText = states[index].text;
       });
 
-      // Aggiorna Turni Pulizie
       const container = document.getElementById('cleaning-tasks-container');
       container.innerHTML = '';
       let doneCount = 0;
@@ -245,7 +258,7 @@
       db.collection('casa').doc('stati').update({ cleaning: currentClean });
     }
 
-    // 2. ASCOLTA LISTA SPESA (In Tempo Reale)
+    // 2. SPESA
     db.collection('spesa').onSnapshot(snapshot => {
       const list = document.getElementById('shopping-list');
       list.innerHTML = '';
@@ -272,7 +285,7 @@
     function toggleItemDone(id, status) { db.collection('spesa').doc(id).update({ done: status }); }
     function deleteItem(id) { db.collection('spesa').doc(id).delete(); }
 
-    // 3. ASCOLTA COINQUILINI E PRESENZA (In Tempo Reale)
+    // 3. COINQUILINI
     db.collection('coinquilini').onSnapshot(snapshot => {
       const roommatesList = document.getElementById('roommates-list');
       roommatesList.innerHTML = '';
@@ -316,7 +329,7 @@
       closeAvatarModal();
     }
 
-    // Gestione Modali
+    // Modali
     function openShoppingList() { document.getElementById('shopping-modal').classList.replace('hidden', 'flex'); }
     function closeShoppingList() { document.getElementById('shopping-modal').classList.replace('flex', 'hidden'); }
     function openCleaningModal() { document.getElementById('cleaning-modal').classList.replace('hidden', 'flex'); }
