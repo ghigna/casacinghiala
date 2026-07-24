@@ -16,225 +16,228 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 font-sans pb-16 select-none">
+<body class="bg-slate-100 min-h-screen p-4 font-sans pb-24 select-none">
 
   <!-- Banner Errore -->
   <div id="error-banner" class="hidden max-w-md mx-auto mb-4 bg-rose-500 text-white p-3 rounded-xl text-xs font-bold text-center shadow-lg"></div>
 
   <div class="max-w-md mx-auto space-y-6">
     
-    <header class="text-center py-2 px-2">
-      <h1 class="text-2xl font-black text-slate-800 tracking-tight leading-tight">
-        🐗 Casa Cinghiala
-      </h1>
-      <p class="text-[10px] font-bold text-indigo-600 mt-1 uppercase tracking-wider">
-        Luogo di Venerazione del Sacro Capriolo Pistolero 🦌🔫
-      </p>
+    <!-- HEADER CON PULSANTE CANCELLO INTELLIGENTE -->
+    <header class="text-center py-2 px-2 flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-slate-200/80">
+      <div class="text-left">
+        <h1 class="text-xl font-black text-slate-800 tracking-tight leading-tight">
+          🐗 Casa Cinghiala
+        </h1>
+        <p class="text-[9px] font-bold text-indigo-600 uppercase tracking-wider">
+          Sacro Capriolo Pistolero 🦌
+        </p>
+      </div>
+
+      <!-- BOTTONE STATO CANCELLO PPP -->
+      <button id="gate-toggle-btn" onclick="toggleGate()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all">
+        <i id="gate-btn-icon" class="fa-solid fa-door-closed text-sm"></i>
+        <span id="gate-btn-text">Cancello ...</span>
+      </button>
     </header>
 
-    <!-- CHI C'È A CASA -->
-    <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
-      <div class="flex justify-between items-center">
-        <h2 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-          <i class="fa-solid fa-users text-indigo-500"></i> Chi c'è a casa?
-        </h2>
-        <button onclick="openAvatarModal()" class="text-xs text-indigo-600 font-bold hover:underline bg-indigo-50 px-2 py-1 rounded-lg">
-          + Aggiungi
+    <!-- PAGINA HOME -->
+    <main id="page-home" class="space-y-6">
+      <!-- CHI C'È A CASA -->
+      <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-users text-indigo-500"></i> Chi c'è a casa?
+          </h2>
+          <button onclick="openAvatarModal()" class="text-xs text-indigo-600 font-bold hover:underline bg-indigo-50 px-2 py-1 rounded-lg">
+            + Aggiungi
+          </button>
+        </div>
+        <div id="roommates-list" class="flex flex-wrap gap-2 min-h-[40px] items-center">
+          <p class="text-xs text-slate-400 italic">Caricamento...</p>
+        </div>
+      </section>
+
+      <!-- GRIGLIA PULSANTI DINAMICI -->
+      <div id="status-grid" class="grid grid-cols-2 gap-3"></div>
+
+      <!-- BOTTONE AGGIUNGI NUOVO TAB -->
+      <button onclick="openCustomTabModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
+        <i class="fa-solid fa-plus-circle text-lg"></i> Aggiungi Tab Personalizzato
+      </button>
+    </main>
+
+    <!-- PAGINA CALENDARIO -->
+    <main id="page-calendar" class="space-y-4 hidden">
+      <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="font-bold text-slate-700 text-base flex items-center gap-2">
+            <i class="fa-solid fa-calendar-days text-indigo-500"></i> Calendario Casa
+          </h2>
+          <span id="calendar-month-year" class="text-xs font-bold text-slate-500"></span>
+        </div>
+
+        <!-- Griglia Giorni -->
+        <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-400 border-b pb-2">
+          <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
+        </div>
+        <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 text-center"></div>
+      </section>
+
+      <!-- Eventi Selezionati del Giorno -->
+      <section id="day-details-section" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
+        <h3 id="selected-date-title" class="font-bold text-slate-800 text-sm">Seleziona un giorno</h3>
+        <div id="day-events-list" class="space-y-2 text-xs">
+          <p class="text-slate-400 italic">Nessun evento programmato.</p>
+        </div>
+        <button onclick="openAddEventModal()" class="w-full bg-indigo-50 text-indigo-600 font-bold py-2 rounded-xl text-xs hover:bg-indigo-100 transition-all">
+          + Aggiungi Ospite o Vacanza
+        </button>
+      </section>
+    </main>
+
+  </div>
+
+  <!-- NAVBAR IN BASSO -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-2 flex justify-around items-center z-40 shadow-lg">
+    <button id="nav-home-btn" onclick="switchTab('home')" class="flex flex-col items-center text-indigo-600 font-bold text-xs">
+      <i class="fa-solid fa-house text-lg"></i>
+      <span>Home</span>
+    </button>
+    <button id="nav-calendar-btn" onclick="switchTab('calendar')" class="flex flex-col items-center text-slate-400 font-bold text-xs">
+      <i class="fa-solid fa-calendar-days text-lg"></i>
+      <span>Calendario</span>
+    </button>
+  </nav>
+
+  <!-- MODALE CREA / MODIFICA TAB -->
+  <div id="custom-tab-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 id="modal-tab-title" class="text-lg font-bold text-slate-800">➕ Tab Personalizzato</h2>
+        <button onclick="closeCustomTabModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
         </button>
       </div>
-      <div id="roommates-list" class="flex flex-wrap gap-2 min-h-[40px] items-center">
-        <p class="text-xs text-slate-400 italic">Caricamento...</p>
-      </div>
-    </section>
-
-    <!-- GRIGLIA PULSANTI DINAMICI -->
-    <div id="status-grid" class="grid grid-cols-2 gap-3"></div>
-
-    <!-- BOTTONE AGGIUNGI NUOVO TAB -->
-    <button onclick="openCustomTabModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
-      <i class="fa-solid fa-plus-circle text-lg"></i> Aggiungi Tab Personalizzato
-    </button>
-
-    <!-- MODALE AGGIUNGI COINQUILINO -->
-    <div id="avatar-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-      <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
-        <div class="flex justify-between items-center border-b pb-2">
-          <h2 class="text-lg font-bold text-slate-800">👤 Aggiungi Coinquilino</h2>
-          <button onclick="closeAvatarModal()" class="text-slate-400 hover:text-slate-600 p-1">
-            <i class="fa-solid fa-xmark text-xl"></i>
-          </button>
+      <div class="space-y-3">
+        <input type="hidden" id="editing-tab-id">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Nome Scheda</label>
+          <input type="text" id="tab-name" placeholder="Es. Gatti, Piante, Auto..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
-        <div class="space-y-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Nome</label>
-            <input type="text" id="roommate-name" placeholder="Es. Marco" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Scegli Emoji Avatar</label>
-            <div id="emoji-picker" class="grid grid-cols-6 gap-2 text-2xl max-h-48 overflow-y-auto p-2 border border-slate-200 rounded-xl">
-              <!-- Moltiplicati Avatar Emoji -->
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-indigo-500">🐗</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🦌</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐶</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐱</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐭</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐹</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐰</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🦊</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐻</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐼</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐨</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐯</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🦁</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐮</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐷</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐸</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐵</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐔</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐧</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐦</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🦆</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🦅</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🦉</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🦄</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐝</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐛</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🦖</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🐙</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🤠</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🥷</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🧙‍♂️</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">👽</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🤖</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">👻</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🍕</span>
-              <span onclick="selectEmoji(this)" class="cursor-pointer p-1.5 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent">🍺</span>
-            </div>
-          </div>
-          <button onclick="addRoommate()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-indigo-700">Salva Coinquilino</button>
+        
+        <div id="type-select-container">
+          <label class="block text-xs font-bold text-slate-600 mb-1">Tipo di Scheda</label>
+          <select id="tab-type" onchange="toggleSubtasksInput()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="status">Pulsante Stato (Tutto OK / Da Fare / In Corso)</option>
+            <option value="list">Lista Cose da Fare (Tipo Spesa)</option>
+            <option value="subtasks">Divisione in Sotto-Turni (Tipo Pulizie)</option>
+          </select>
         </div>
+
+        <!-- Input Sotto-Turni -->
+        <div id="subtasks-input-container" class="hidden">
+          <label class="block text-xs font-bold text-slate-600 mb-1">Sotto-Turni (Separati da virgola)</label>
+          <input type="text" id="tab-subtasks" placeholder="Es. Cibo, Lettiera, Acqua" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Scegli Icona</label>
+          <div id="icon-picker" class="grid grid-cols-5 gap-2 text-xl p-2 border border-slate-200 rounded-xl max-h-40 overflow-y-auto">
+            <span onclick="selectIcon(this, 'fa-cat')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-indigo-500"><i class="fa-solid fa-cat"></i></span>
+            <span onclick="selectIcon(this, 'fa-dog')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-dog"></i></span>
+            <span onclick="selectIcon(this, 'fa-paw')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-paw"></i></span>
+            <span onclick="selectIcon(this, 'fa-plant-wilt')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-plant-wilt"></i></span>
+            <span onclick="selectIcon(this, 'fa-car')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-car"></i></span>
+            <span onclick="selectIcon(this, 'fa-wrench')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-wrench"></i></span>
+            <span onclick="selectIcon(this, 'fa-utensils')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-utensils"></i></span>
+            <span onclick="selectIcon(this, 'fa-star')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-star"></i></span>
+            <span onclick="selectIcon(this, 'fa-gamepad')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-gamepad"></i></span>
+            <span onclick="selectIcon(this, 'fa-umbrella-beach')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-umbrella-beach"></i></span>
+          </div>
+        </div>
+        <button onclick="saveCustomTab()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-emerald-700">Salva Scheda</button>
       </div>
     </div>
+  </div>
 
-    <!-- MODALE GESTIONE / CANCELLAZIONE COINQUILINO -->
-    <div id="manage-roommate-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-      <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
-        <div class="flex justify-between items-center border-b pb-2">
-          <h2 id="manage-roommate-title" class="text-lg font-bold text-slate-800">👤 Gestisci Coinquilino</h2>
-          <button onclick="closeManageRoommateModal()" class="text-slate-400 hover:text-slate-600 p-1">
-            <i class="fa-solid fa-xmark text-xl"></i>
-          </button>
+  <!-- MODALE EVENTO CALENDARIO -->
+  <div id="event-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="text-lg font-bold text-slate-800">📅 Aggiungi Evento</h2>
+        <button onclick="closeEventModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Tipo Evento</label>
+          <select id="event-type" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="ospite">👤 Ospite in Visita</option>
+            <option value="vacanza">🏖️ Vacanza / Ferie</option>
+          </select>
         </div>
-        <div class="space-y-3">
-          <button id="toggle-house-btn" onclick="toggleRoommateHouseStatus()" class="w-full bg-slate-100 text-slate-800 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 active:bg-slate-200">
-            <i class="fa-solid fa-arrows-rotate"></i> Cambia Stato Presenza
-          </button>
-          <button onclick="deleteRoommate()" class="w-full bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 active:bg-rose-700">
-            <i class="fa-solid fa-trash"></i> Elimina Coinquilino
-          </button>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Nome / Descrizione</label>
+          <input type="text" id="event-title" placeholder="Es. Marco & Sara / Mare a Gallipoli" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Emoji / Avatar</label>
+          <input type="text" id="event-emoji" value="👋" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-xl">
+        </div>
+        <button onclick="saveCalendarEvent()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-indigo-700">Salva Evento</button>
       </div>
     </div>
+  </div>
 
-    <!-- MODALE CREA TAB DINAMICO -->
-    <div id="custom-tab-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-      <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center border-b pb-2">
-          <h2 class="text-lg font-bold text-slate-800">➕ Nuovo Tab Personalizzato</h2>
-          <button onclick="closeCustomTabModal()" class="text-slate-400 hover:text-slate-600 p-1">
-            <i class="fa-solid fa-xmark text-xl"></i>
-          </button>
+  <!-- MODALE SOTTO-TURNI DINAMICI -->
+  <div id="dynamic-subtasks-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <div>
+          <h2 id="dynamic-subtasks-title" class="text-lg font-bold text-slate-800">🧹 Turni</h2>
+          <p class="text-[11px] text-slate-500">Tocca ogni turno per cambiarne lo stato</p>
         </div>
-        <div class="space-y-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Nome Scheda</label>
-            <input type="text" id="tab-name" placeholder="Es. Gatti, Piante, Auto..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          </div>
-          
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Tipo di Scheda</label>
-            <select id="tab-type" onchange="toggleSubtasksInput()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="status">Pulsante Stato (Tutto OK / Da Fare / In Corso)</option>
-              <option value="list">Lista Cose da Fare (Tipo Spesa)</option>
-              <option value="subtasks">Divisione in Sotto-Turni (Tipo Pulizie)</option>
-            </select>
-          </div>
+        <button onclick="closeDynamicSubtasksModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <div id="dynamic-subtasks-container" class="space-y-2"></div>
+    </div>
+  </div>
 
-          <!-- Input per Sotto-Turni -->
-          <div id="subtasks-input-container" class="hidden">
-            <label class="block text-xs font-bold text-slate-600 mb-1">Sotto-Turni (Separati da virgola)</label>
-            <input type="text" id="tab-subtasks" placeholder="Es. Cibo, Lettiera, Acqua" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          </div>
+  <!-- MODALE LISTE DINAMICHE -->
+  <div id="dynamic-list-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 id="dynamic-list-title" class="text-lg font-bold text-slate-800">📋 Lista</h2>
+        <button onclick="closeDynamicListModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <div class="flex gap-2">
+        <input type="text" id="dynamic-item-input" placeholder="Aggiungi elemento..." class="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <button onclick="addDynamicItem()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold active:bg-indigo-700">Aggiungi</button>
+      </div>
+      <ul id="dynamic-list-items" class="space-y-2 max-h-60 overflow-y-auto"></ul>
+    </div>
+  </div>
 
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Scegli Icona</label>
-            <div id="icon-picker" class="grid grid-cols-5 gap-2 text-xl p-2 border border-slate-200 rounded-xl max-h-40 overflow-y-auto">
-              <!-- Moltiplicate Icone FontAwesome -->
-              <span onclick="selectIcon(this, 'fa-cat')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-indigo-500"><i class="fa-solid fa-cat"></i></span>
-              <span onclick="selectIcon(this, 'fa-dog')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-dog"></i></span>
-              <span onclick="selectIcon(this, 'fa-paw')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-paw"></i></span>
-              <span onclick="selectIcon(this, 'fa-plant-wilt')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-plant-wilt"></i></span>
-              <span onclick="selectIcon(this, 'fa-tree')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-tree"></i></span>
-              <span onclick="selectIcon(this, 'fa-envelope')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-envelope"></i></span>
-              <span onclick="selectIcon(this, 'fa-bolt')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-bolt"></i></span>
-              <span onclick="selectIcon(this, 'fa-car')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-car"></i></span>
-              <span onclick="selectIcon(this, 'fa-wrench')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-wrench"></i></span>
-              <span onclick="selectIcon(this, 'fa-wifi')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-wifi"></i></span>
-              <span onclick="selectIcon(this, 'fa-wine-glass')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-wine-glass"></i></span>
-              <span onclick="selectIcon(this, 'fa-beer-mug-empty')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-beer-mug-empty"></i></span>
-              <span onclick="selectIcon(this, 'fa-utensils')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-utensils"></i></span>
-              <span onclick="selectIcon(this, 'fa-bell')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-bell"></i></span>
-              <span onclick="selectIcon(this, 'fa-star')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-star"></i></span>
-              <span onclick="selectIcon(this, 'fa-gamepad')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-gamepad"></i></span>
-              <span onclick="selectIcon(this, 'fa-tv')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-tv"></i></span>
-              <span onclick="selectIcon(this, 'fa-shirt')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-shirt"></i></span>
-              <span onclick="selectIcon(this, 'fa-couch')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-couch"></i></span>
-              <span onclick="selectIcon(this, 'fa-pills')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-pills"></i></span>
-              <span onclick="selectIcon(this, 'fa-coins')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-coins"></i></span>
-              <span onclick="selectIcon(this, 'fa-fire')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-fire"></i></span>
-              <span onclick="selectIcon(this, 'fa-droplet')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-droplet"></i></span>
-              <span onclick="selectIcon(this, 'fa-key')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-key"></i></span>
-              <span onclick="selectIcon(this, 'fa-music')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-music"></i></span>
-            </div>
-          </div>
-          <button onclick="saveCustomTab()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-emerald-700">Crea Scheda</button>
-        </div>
+  <!-- MODALE COINQUILINO -->
+  <div id="avatar-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="text-lg font-bold text-slate-800">👤 Aggiungi Coinquilino</h2>
+        <button onclick="closeAvatarModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <div class="space-y-3">
+        <input type="text" id="roommate-name" placeholder="Nome" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <button onclick="addRoommate()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-indigo-700">Salva Coinquilino</button>
       </div>
     </div>
-
-    <!-- MODALE LISTE DINAMICHE -->
-    <div id="dynamic-list-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-      <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
-        <div class="flex justify-between items-center border-b pb-2">
-          <h2 id="dynamic-list-title" class="text-lg font-bold text-slate-800">📋 Lista</h2>
-          <button onclick="closeDynamicListModal()" class="text-slate-400 hover:text-slate-600 p-1">
-            <i class="fa-solid fa-xmark text-xl"></i>
-          </button>
-        </div>
-        <div class="flex gap-2">
-          <input type="text" id="dynamic-item-input" placeholder="Aggiungi elemento..." class="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <button onclick="addDynamicItem()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold active:bg-indigo-700">Aggiungi</button>
-        </div>
-        <ul id="dynamic-list-items" class="space-y-2 max-h-60 overflow-y-auto"></ul>
-      </div>
-    </div>
-
-    <!-- MODALE SOTTO-TURNI DINAMICI -->
-    <div id="dynamic-subtasks-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-      <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
-        <div class="flex justify-between items-center border-b pb-2">
-          <div>
-            <h2 id="dynamic-subtasks-title" class="text-lg font-bold text-slate-800">🧹 Turni</h2>
-            <p class="text-[11px] text-slate-500">Tocca ogni turno per cambiarne lo stato</p>
-          </div>
-          <button onclick="closeDynamicSubtasksModal()" class="text-slate-400 hover:text-slate-600 p-1">
-            <i class="fa-solid fa-xmark text-xl"></i>
-          </button>
-        </div>
-        <div id="dynamic-subtasks-container" class="space-y-2"></div>
-      </div>
-    </div>
-
   </div>
 
   <script>
@@ -273,20 +276,67 @@
     let customTabsList = [];
     let currentActiveListTab = null;
     let currentActiveSubtasksTab = null;
-    let selectedRoommate = null;
+    let selectedDateStr = new Date().toISOString().split('T')[0];
 
-    // 1. ASCOLTATE STATI E TAB
+    // 1. GESTIONE INTERRUTTORE CANCELLO PPP
+    function toggleGate() {
+      const isCurrentlyOpen = currentStatusData.gateOpen || false;
+      const newState = !isCurrentlyOpen;
+      
+      db.collection('casa').doc('stati').update({ gateOpen: newState });
+    }
+
+    function updateGateButtonUI(isOpen) {
+      const btn = document.getElementById('gate-toggle-btn');
+      const icon = document.getElementById('gate-btn-icon');
+      const text = document.getElementById('gate-btn-text');
+
+      if (isOpen) {
+        btn.className = "bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all";
+        icon.className = "fa-solid fa-door-open text-sm";
+        text.innerText = "Aperto 🔓";
+      } else {
+        btn.className = "bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all";
+        icon.className = "fa-solid fa-door-closed text-sm";
+        text.innerText = "Chiuso 🔒";
+      }
+    }
+
+    // 2. NAVIGAZIONE TAB (Home / Calendario)
+    function switchTab(page) {
+      if(page === 'home') {
+        document.getElementById('page-home').classList.remove('hidden');
+        document.getElementById('page-calendar').classList.add('hidden');
+        document.getElementById('nav-home-btn').className = "flex flex-col items-center text-indigo-600 font-bold text-xs";
+        document.getElementById('nav-calendar-btn').className = "flex flex-col items-center text-slate-400 font-bold text-xs";
+      } else {
+        document.getElementById('page-home').classList.add('hidden');
+        document.getElementById('page-calendar').classList.remove('hidden');
+        document.getElementById('nav-home-btn').className = "flex flex-col items-center text-slate-400 font-bold text-xs";
+        document.getElementById('nav-calendar-btn').className = "flex flex-col items-center text-indigo-600 font-bold text-xs";
+        renderCalendar();
+      }
+    }
+
+    // 3. ASCOLTO STATI IN TEMPO REALE
     db.collection('casa').doc('stati').onSnapshot(doc => {
       if (doc.exists) {
         currentStatusData = doc.data();
         customTabsList = currentStatusData.customTabs || [];
+        
+        // Aggiorna Pulsante Cancello
+        updateGateButtonUI(currentStatusData.gateOpen || false);
+
         renderGrid();
+        
+        // Aggiorna Modale Sotto-turni Live se aperta
+        if (currentActiveSubtasksTab) {
+          renderSubtasksModal();
+        }
       } else {
-        db.collection('casa').doc('stati').set({
-          spesa: 0, monnezza: 0, orto: 0, pulizie: 0, customTabs: []
-        }).catch(err => showError("Errore Permessi: Controlla le regole!"));
+        db.collection('casa').doc('stati').set({ spesa: 0, monnezza: 0, orto: 0, pulizie: 0, gateOpen: false, customTabs: [] });
       }
-    }, err => showError("Errore Firebase: " + err.message));
+    });
 
     function renderGrid() {
       const grid = document.getElementById('status-grid');
@@ -296,7 +346,6 @@
       allTabs.forEach(tab => {
         const col = document.createElement('div');
         col.className = 'relative';
-        const isCustom = !defaultTabs.some(d => d.id === tab.id);
 
         if (tab.type === 'list') {
           const stateIdx = currentStatusData[tab.id] || 0;
@@ -309,7 +358,7 @@
             <button onclick="openDynamicListModal('${tab.id}', '${tab.name}')" class="absolute bottom-2 left-2 right-2 bg-black/20 active:bg-black/40 text-white text-xs font-semibold py-1 rounded-xl backdrop-blur-md transition-all flex items-center justify-center gap-1">
               <i class="fa-solid fa-list-check"></i> Apri Lista
             </button>
-            ${isCustom ? `<button onclick="deleteCustomTab('${tab.id}')" class="absolute top-2 right-2 text-white/60 hover:text-white p-1 text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}
+            <button onclick="editTab('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
           `;
         } else if (tab.type === 'subtasks') {
           const subData = currentStatusData[`sub_${tab.id}`] || {};
@@ -323,7 +372,7 @@
               <span class="font-bold text-base">${tab.name}</span>
               <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${doneCount}/${subList.length} Fatti</span>
             </button>
-            ${isCustom ? `<button onclick="deleteCustomTab('${tab.id}')" class="absolute top-2 right-2 text-white/60 hover:text-white p-1 text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}
+            <button onclick="editTab('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
           `;
         } else {
           const stateIdx = currentStatusData[tab.id] || 0;
@@ -333,10 +382,9 @@
               <span class="font-bold text-base">${tab.name}</span>
               <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
             </button>
-            ${isCustom ? `<button onclick="deleteCustomTab('${tab.id}')" class="absolute top-2 right-2 text-white/60 hover:text-white p-1 text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}
+            <button onclick="editTab('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
           `;
         }
-
         grid.appendChild(col);
       });
     }
@@ -346,7 +394,166 @@
       db.collection('casa').doc('stati').update({ [key]: nextIdx });
     }
 
-    // 2. MODALE SOTTO-TURNI
+    // 4. MODIFICA TAB
+    let selectedIconClass = 'fa-cat';
+    function editTab(tabId) {
+      const allTabs = [...defaultTabs, ...customTabsList];
+      const tab = allTabs.find(t => t.id === tabId);
+      if (!tab) return;
+
+      document.getElementById('modal-tab-title').innerText = "✏️ Modifica Tab";
+      document.getElementById('editing-tab-id').value = tab.id;
+      document.getElementById('tab-name').value = tab.name;
+      document.getElementById('tab-type').value = tab.type;
+      document.getElementById('type-select-container').classList.add('hidden');
+
+      if (tab.type === 'subtasks') {
+        document.getElementById('subtasks-input-container').classList.remove('hidden');
+        document.getElementById('tab-subtasks').value = (tab.subtasks || []).join(', ');
+      } else {
+        document.getElementById('subtasks-input-container').classList.add('hidden');
+      }
+
+      openCustomTabModal();
+    }
+
+    function saveCustomTab() {
+      const editingId = document.getElementById('editing-tab-id').value;
+      const name = document.getElementById('tab-name').value.trim();
+      const type = document.getElementById('tab-type').value;
+      if (!name) return;
+
+      if (editingId) {
+        let allCustoms = [...customTabsList];
+        let idx = allCustoms.findIndex(t => t.id === editingId);
+        
+        let targetTab = idx !== -1 ? allCustoms[idx] : defaultTabs.find(t => t.id === editingId);
+        targetTab.name = name;
+        targetTab.icon = selectedIconClass;
+
+        if (targetTab.type === 'subtasks') {
+          const subInput = document.getElementById('tab-subtasks').value;
+          targetTab.subtasks = subInput ? subInput.split(',').map(s => s.trim()).filter(s => s) : [];
+        }
+
+        if (idx !== -1) {
+          db.collection('casa').doc('stati').update({ customTabs: allCustoms });
+        } else {
+          db.collection('casa').doc('stati').update({ customTabs: [...customTabsList, targetTab] });
+        }
+      } else {
+        const newId = 'tab_' + Date.now();
+        let newTabObj = { id: newId, name: name, icon: selectedIconClass, type: type };
+        if (type === 'subtasks') {
+          const subInput = document.getElementById('tab-subtasks').value;
+          newTabObj.subtasks = subInput ? subInput.split(',').map(s => s.trim()).filter(s => s) : ['Incarico 1'];
+        }
+        db.collection('casa').doc('stati').update({
+          customTabs: [...customTabsList, newTabObj],
+          [newId]: 0
+        });
+      }
+      closeCustomTabModal();
+    }
+
+    // 5. CALENDARIO
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+
+    function renderCalendar() {
+      const daysGrid = document.getElementById('calendar-days-grid');
+      daysGrid.innerHTML = '';
+      const date = new Date(currentYear, currentMonth, 1);
+      
+      const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+      document.getElementById('calendar-month-year').innerText = `${monthNames[currentMonth]} ${currentYear}`;
+
+      let firstDayIndex = date.getDay() - 1;
+      if (firstDayIndex === -1) firstDayIndex = 6;
+
+      const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      db.collection('calendario').onSnapshot(snapshot => {
+        let events = {};
+        snapshot.forEach(doc => { events[doc.id] = doc.data().items || []; });
+
+        daysGrid.innerHTML = '';
+        for (let x = 0; x < firstDayIndex; x++) daysGrid.innerHTML += `<div></div>`;
+
+        for (let day = 1; day <= lastDay; day++) {
+          const dayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const dayEvents = events[dayStr] || [];
+          const isSelected = dayStr === selectedDateStr;
+
+          const dayEl = document.createElement('div');
+          dayEl.className = `p-2 rounded-xl text-xs font-bold flex flex-col items-center justify-between cursor-pointer border ${isSelected ? 'border-indigo-600 bg-indigo-50' : 'border-slate-100 bg-slate-50'}`;
+          dayEl.onclick = () => selectCalendarDate(dayStr);
+          
+          let dots = dayEvents.map(e => e.emoji).join('');
+          dayEl.innerHTML = `<span>${day}</span><span class="text-[10px] mt-1">${dots}</span>`;
+          daysGrid.appendChild(dayEl);
+        }
+        loadDayEvents(selectedDateStr, events[selectedDateStr] || []);
+      });
+    }
+
+    function selectCalendarDate(dateStr) {
+      selectedDateStr = dateStr;
+      renderCalendar();
+    }
+
+    function loadDayEvents(dateStr, dayEvents) {
+      document.getElementById('selected-date-title').innerText = `Eventi del ${dateStr}`;
+      const list = document.getElementById('day-events-list');
+      list.innerHTML = '';
+
+      if (dayEvents.length === 0) {
+        list.innerHTML = `<p class="text-slate-400 italic">Nessun evento registrato per questa data.</p>`;
+        return;
+      }
+
+      dayEvents.forEach((ev, idx) => {
+        const item = document.createElement('div');
+        item.className = "flex justify-between items-center p-2 rounded-xl bg-slate-50 border border-slate-200";
+        item.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-base">${ev.emoji}</span>
+            <span class="font-bold text-slate-700">${ev.title}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${ev.type === 'vacanza' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">${ev.type}</span>
+          </div>
+          <button onclick="deleteCalendarEvent('${dateStr}', ${idx})" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function saveCalendarEvent() {
+      const type = document.getElementById('event-type').value;
+      const title = document.getElementById('event-title').value.trim();
+      const emoji = document.getElementById('event-emoji').value.trim() || '📅';
+      if (!title) return;
+
+      const docRef = db.collection('calendario').doc(selectedDateStr);
+      docRef.get().then(doc => {
+        let existing = doc.exists ? (doc.data().items || []) : [];
+        existing.push({ type, title, emoji });
+        docRef.set({ items: existing });
+        closeEventModal();
+      });
+    }
+
+    function deleteCalendarEvent(dateStr, index) {
+      const docRef = db.collection('calendario').doc(dateStr);
+      docRef.get().then(doc => {
+        if (doc.exists) {
+          let existing = doc.data().items || [];
+          existing.splice(index, 1);
+          docRef.set({ items: existing });
+        }
+      });
+    }
+
+    // 6. SOTTO-TURNI
     function openDynamicSubtasksModal(tabId, tabName) {
       currentActiveSubtasksTab = tabId;
       document.getElementById('dynamic-subtasks-title').innerText = "🧹 " + tabName;
@@ -390,24 +597,27 @@
       currentActiveSubtasksTab = null;
     }
 
-    // 3. MODALE LISTE DINAMICHE
-    let listUnsubscribe = null;
+    // 7. LISTE DINAMICHE
     function openDynamicListModal(tabId, tabName) {
       currentActiveListTab = tabId;
       document.getElementById('dynamic-list-title').innerText = "📋 " + tabName;
+      renderListItems();
       document.getElementById('dynamic-list-modal').classList.replace('hidden', 'flex');
+    }
 
-      if (listUnsubscribe) listUnsubscribe();
-      listUnsubscribe = db.collection('liste').doc(tabId).collection('items').onSnapshot(snapshot => {
-        const listContainer = document.getElementById('dynamic-list-items');
-        listContainer.innerHTML = '';
-        snapshot.forEach(doc => {
-          const item = doc.data();
+    function renderListItems() {
+      if (!currentActiveListTab) return;
+      const listContainer = document.getElementById('dynamic-list-items');
+      listContainer.innerHTML = '';
+
+      db.collection('liste').doc(currentActiveListTab).get().then(doc => {
+        const items = doc.exists ? (doc.data().items || []) : [];
+        items.forEach((item, index) => {
           const li = document.createElement('li');
-          li.className = "flex justify-between items-center bg-slate-50 p-2.5 rounded-xl text-sm border border-slate-200";
+          li.className = "flex justify-between items-center bg-slate-100 p-2.5 rounded-xl border border-slate-200 text-sm";
           li.innerHTML = `
-            <span onclick="toggleDynamicItemDone('${doc.id}', ${!item.done})" class="cursor-pointer font-medium ${item.done ? 'line-through text-slate-400' : 'text-slate-700'}">${item.text}</span>
-            <button onclick="deleteDynamicItem('${doc.id}')" class="text-rose-500 hover:text-rose-700 px-2"><i class="fa-solid fa-trash"></i></button>
+            <span class="font-medium text-slate-700">${item}</span>
+            <button onclick="removeDynamicItem(${index})" class="text-rose-500 hover:text-rose-700 font-bold p-1"><i class="fa-solid fa-trash"></i></button>
           `;
           listContainer.appendChild(li);
         });
@@ -416,20 +626,29 @@
 
     function addDynamicItem() {
       const input = document.getElementById('dynamic-item-input');
-      const text = input.value.trim();
-      if (!text || !currentActiveListTab) return;
-      db.collection('liste').doc(currentActiveListTab).collection('items').add({ text: text, done: false, createdAt: Date.now() });
-      input.value = '';
+      const val = input.value.trim();
+      if (!val || !currentActiveListTab) return;
+
+      const docRef = db.collection('liste').doc(currentActiveListTab);
+      docRef.get().then(doc => {
+        let existing = doc.exists ? (doc.data().items || []) : [];
+        existing.push(val);
+        docRef.set({ items: existing }).then(() => {
+          input.value = '';
+          renderListItems();
+        });
+      });
     }
 
-    function toggleDynamicItemDone(itemId, status) {
-      if (!currentActiveListTab) return;
-      db.collection('liste').doc(currentActiveListTab).collection('items').doc(itemId).update({ done: status });
-    }
-
-    function deleteDynamicItem(itemId) {
-      if (!currentActiveListTab) return;
-      db.collection('liste').doc(currentActiveListTab).collection('items').doc(itemId).delete();
+    function removeDynamicItem(index) {
+      const docRef = db.collection('liste').doc(currentActiveListTab);
+      docRef.get().then(doc => {
+        if (doc.exists) {
+          let existing = doc.data().items || [];
+          existing.splice(index, 1);
+          docRef.set({ items: existing }).then(() => renderListItems());
+        }
+      });
     }
 
     function closeDynamicListModal() {
@@ -437,118 +656,50 @@
       currentActiveListTab = null;
     }
 
-    // 4. CREA NUOVO TAB
-    let selectedIconClass = 'fa-cat';
-    function toggleSubtasksInput() {
-      const type = document.getElementById('tab-type').value;
-      const subContainer = document.getElementById('subtasks-input-container');
-      if (type === 'subtasks') subContainer.classList.remove('hidden');
-      else subContainer.classList.add('hidden');
-    }
-
-    function selectIcon(el, iconClass) {
-      document.querySelectorAll('#icon-picker span').forEach(s => s.classList.replace('border-indigo-500', 'border-transparent'));
-      el.classList.replace('border-transparent', 'border-indigo-500');
-      selectedIconClass = iconClass;
-    }
-
-    function saveCustomTab() {
-      const nameInput = document.getElementById('tab-name');
-      const name = nameInput.value.trim();
-      const type = document.getElementById('tab-type').value;
-      if (!name) return;
-
-      const newId = 'tab_' + Date.now();
-      let newTabObj = { id: newId, name: name, icon: selectedIconClass, type: type };
-
-      if (type === 'subtasks') {
-        const subInput = document.getElementById('tab-subtasks').value;
-        const subArray = subInput ? subInput.split(',').map(s => s.trim()).filter(s => s) : ['Incarico 1', 'Incarico 2'];
-        newTabObj.subtasks = subArray;
-      }
-
-      const updatedCustomTabs = [...customTabsList, newTabObj];
-      db.collection('casa').doc('stati').update({
-        customTabs: updatedCustomTabs,
-        [newId]: 0
-      });
-
-      nameInput.value = '';
-      document.getElementById('tab-subtasks').value = '';
-      closeCustomTabModal();
-    }
-
-    function deleteCustomTab(id) {
-      if (!confirm("Vuoi eliminare questa scheda?")) return;
-      const updatedCustomTabs = customTabsList.filter(t => t.id !== id);
-      db.collection('casa').doc('stati').update({ customTabs: updatedCustomTabs });
-    }
-
-    // 5. COINQUILINI & CANCELLAZIONE AVATAR
+    // COINQUILINI
     db.collection('coinquilini').onSnapshot(snapshot => {
       const roommatesList = document.getElementById('roommates-list');
       roommatesList.innerHTML = '';
       snapshot.forEach(doc => {
         const data = doc.data();
         const card = document.createElement('div');
-        if (data.inHouse) {
-          card.className = "flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full cursor-pointer transition-all active:scale-95";
-          card.innerHTML = `<span class="text-lg">${data.emoji}</span><span class="text-xs font-bold text-emerald-800">${data.name}</span><span class="w-2 h-2 rounded-full bg-emerald-500"></span>`;
-        } else {
-          card.className = "flex items-center gap-1.5 bg-slate-100 border border-slate-200 opacity-50 px-3 py-1.5 rounded-full cursor-pointer transition-all active:scale-95";
-          card.innerHTML = `<span class="text-lg">${data.emoji}</span><span class="text-xs font-bold text-slate-500">${data.name}</span><span class="w-2 h-2 rounded-full bg-slate-400"></span>`;
-        }
-        card.onclick = () => openManageRoommateModal(doc.id, data);
+        card.className = `flex items-center gap-1.5 ${data.inHouse ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-100 border-slate-200 opacity-50'} border px-3 py-1.5 rounded-full cursor-pointer`;
+        card.innerHTML = `<span class="text-lg">${data.emoji || '🐗'}</span><span class="text-xs font-bold">${data.name}</span>`;
+        card.onclick = () => db.collection('coinquilini').doc(doc.id).update({ inHouse: !data.inHouse });
         roommatesList.appendChild(card);
       });
     });
 
-    function openManageRoommateModal(id, data) {
-      selectedRoommate = { id, ...data };
-      document.getElementById('manage-roommate-title').innerText = `${data.emoji} ${data.name}`;
-      document.getElementById('manage-roommate-modal').classList.replace('hidden', 'flex');
-    }
-
-    function closeManageRoommateModal() {
-      document.getElementById('manage-roommate-modal').classList.replace('flex', 'hidden');
-      selectedRoommate = null;
-    }
-
-    function toggleRoommateHouseStatus() {
-      if (!selectedRoommate) return;
-      db.collection('coinquilini').doc(selectedRoommate.id).update({ inHouse: !selectedRoommate.inHouse });
-      closeManageRoommateModal();
-    }
-
-    function deleteRoommate() {
-      if (!selectedRoommate) return;
-      if (confirm(`Sei sicuro di voler eliminare ${selectedRoommate.name}?`)) {
-        db.collection('coinquilini').doc(selectedRoommate.id).delete();
-        closeManageRoommateModal();
-      }
-    }
-
-    let selectedEmoji = '🐗';
-    function selectEmoji(el) {
-      document.querySelectorAll('#emoji-picker span').forEach(s => s.classList.replace('border-indigo-500', 'border-transparent'));
-      el.classList.replace('border-transparent', 'border-indigo-500');
-      selectedEmoji = el.innerText;
-    }
-
     function addRoommate() {
-      const nameInput = document.getElementById('roommate-name');
-      const name = nameInput.value.trim();
-      if (!name) return;
-      db.collection('coinquilini').add({ name: name, emoji: selectedEmoji, inHouse: true });
-      nameInput.value = '';
+      const input = document.getElementById('roommate-name');
+      if (!input.value.trim()) return;
+      db.collection('coinquilini').add({ name: input.value.trim(), emoji: '🐗', inHouse: true });
+      input.value = '';
       closeAvatarModal();
     }
 
-    // Modal Helpers
+    // UTILS MODALI
+    function openCustomTabModal() { 
+      document.getElementById('editing-tab-id').value = '';
+      document.getElementById('modal-tab-title').innerText = "➕ Tab Personalizzato";
+      document.getElementById('type-select-container').classList.remove('hidden');
+      document.getElementById('custom-tab-modal').classList.replace('hidden', 'flex'); 
+    }
+    function closeCustomTabModal() { document.getElementById('custom-tab-modal').classList.replace('flex', 'hidden'); }
     function openAvatarModal() { document.getElementById('avatar-modal').classList.replace('hidden', 'flex'); }
     function closeAvatarModal() { document.getElementById('avatar-modal').classList.replace('flex', 'hidden'); }
-    function openCustomTabModal() { document.getElementById('custom-tab-modal').classList.replace('hidden', 'flex'); }
-    function closeCustomTabModal() { document.getElementById('custom-tab-modal').classList.replace('flex', 'hidden'); }
+    function openAddEventModal() { document.getElementById('event-modal').classList.replace('hidden', 'flex'); }
+    function closeEventModal() { document.getElementById('event-modal').classList.replace('flex', 'hidden'); }
+    function toggleSubtasksInput() {
+      const type = document.getElementById('tab-type').value;
+      if (type === 'subtasks') document.getElementById('subtasks-input-container').classList.remove('hidden');
+      else document.getElementById('subtasks-input-container').classList.add('hidden');
+    }
+    function selectIcon(el, icon) {
+      document.querySelectorAll('#icon-picker span').forEach(s => s.classList.replace('border-indigo-500', 'border-transparent'));
+      el.classList.replace('border-transparent', 'border-indigo-500');
+      selectedIconClass = icon;
+    }
   </script>
 </body>
 </html>
