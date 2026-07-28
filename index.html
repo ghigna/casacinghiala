@@ -46,10 +46,13 @@
       <!-- CHI C'È A CASA -->
       <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
         <div class="flex justify-between items-center">
-          <h2 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-            <i class="fa-solid fa-users text-indigo-500"></i> Chi c'è a casa?
-          </h2>
-          <button onclick="openAvatarModal()" class="text-xs text-indigo-600 font-bold hover:underline bg-indigo-50 px-2 py-1 rounded-lg">
+          <div>
+            <h2 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+              <i class="fa-solid fa-users text-indigo-500"></i> Chi c'è a casa?
+            </h2>
+            <p class="text-[10px] text-slate-400">Tocca un nome per cambiare presenza</p>
+          </div>
+          <button onclick="openAvatarModal()" class="text-xs text-indigo-600 font-bold hover:underline bg-indigo-50 px-2.5 py-1 rounded-lg">
             + Aggiungi
           </button>
         </div>
@@ -254,14 +257,14 @@
   <div id="avatar-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
     <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b pb-2">
-        <h2 class="text-lg font-bold text-slate-800">👤 Aggiungi Coinquilino</h2>
+        <h2 class="text-lg font-bold text-slate-800">👤 Aggiungi Persona</h2>
         <button onclick="closeAvatarModal()" class="text-slate-400 hover:text-slate-600 p-1">
           <i class="fa-solid fa-xmark text-xl"></i>
         </button>
       </div>
       <div class="space-y-3">
         <input type="text" id="roommate-name" placeholder="Nome" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <button onclick="addRoommate()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-indigo-700">Salva Coinquilino</button>
+        <button onclick="addRoommate()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-indigo-700">Salva Persona</button>
       </div>
     </div>
   </div>
@@ -275,6 +278,9 @@
       messagingSenderId: "274673117994",
       appId: "1:274673117994:web:a2d31710afdc0c2dd14c53"
     };
+
+    // 🔗 INDIRIZZO DELLA PAGINA "CANCELLO AMICI"
+    const CANCELLO_AMICI_URL = "https://ghigna.github.io/ppp/";
 
     function showError(msg) {
       const banner = document.getElementById('error-banner');
@@ -307,10 +313,16 @@
     let selectedIconClass = 'fa-cat';
     let calendarEvents = [];
 
-    // 1. GESTIONE INTERRUTTORE CANCELLO
+    // 1. GESTIONE INTERRUTTORE CANCELLO E COLLEGAMENTO "CANCELLO AMICI"
     function toggleGate() {
       const isCurrentlyOpen = currentStatusData.gateOpen || false;
-      db.collection('casa').doc('stati').update({ gateOpen: !isCurrentlyOpen });
+      const nextState = !isCurrentlyOpen;
+
+      // Aggiorna lo stato su Firestore
+      db.collection('casa').doc('stati').update({ gateOpen: nextState });
+
+      // Apri il link di Cancello Amici
+      window.open(CANCELLO_AMICI_URL, '_blank');
     }
 
     function updateGateButtonUI(isOpen) {
@@ -585,25 +597,39 @@
       });
     }
 
-    // 5. GESTIONE INQUILINI / ROOMMATES
+    // 5. GESTIONE INQUILINI / ROOMMATES CON TOGGLE PRESENZA (ONLINE/OFFLINE)
     db.collection('inquilini').onSnapshot(snapshot => {
       const list = document.getElementById('roommates-list');
       list.innerHTML = '';
       if (snapshot.empty) {
-        list.innerHTML = `<p class="text-xs text-slate-400 italic">Nessun inquilino presente.</p>`;
+        list.innerHTML = `<p class="text-xs text-slate-400 italic">Nessun utente presente.</p>`;
         return;
       }
       snapshot.forEach(doc => {
         const data = doc.data();
+        const isPresent = data.present || false;
         const tag = document.createElement('div');
-        tag.className = 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-xl flex items-center gap-1.5 transition-all';
+        
+        // Stili dinamici: Verde se Online (Presente), Grigio se Offline
+        const bgClass = isPresent ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-300' : 'bg-slate-200 text-slate-600';
+        const dotColor = isPresent ? 'bg-emerald-200 animate-pulse' : 'bg-slate-400';
+
+        tag.className = `${bgClass} text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-2 cursor-pointer transition-all active:scale-95`;
+        
         tag.innerHTML = `
-          <span>${data.name}</span>
-          <button onclick="deleteRoommate('${doc.id}')" class="text-slate-400 hover:text-rose-500 text-xs"><i class="fa-solid fa-xmark"></i></button>
+          <span onclick="toggleRoommatePresence('${doc.id}', ${isPresent})" class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full ${dotColor}"></span>
+            <span>${data.name}</span>
+          </span>
+          <button onclick="event.stopPropagation(); deleteRoommate('${doc.id}')" class="opacity-60 hover:opacity-100 text-xs ml-1"><i class="fa-solid fa-xmark"></i></button>
         `;
         list.appendChild(tag);
       });
     });
+
+    function toggleRoommatePresence(id, currentPresence) {
+      db.collection('inquilini').doc(id).update({ present: !currentPresence });
+    }
 
     function openAvatarModal() {
       document.getElementById('avatar-modal').classList.replace('hidden', 'flex');
@@ -616,14 +642,17 @@
     function addRoommate() {
       const name = document.getElementById('roommate-name').value.trim();
       if (!name) return;
-      db.collection('inquilini').add({ name: name }).then(() => {
+      db.collection('inquilini').add({ 
+        name: name,
+        present: false 
+      }).then(() => {
         document.getElementById('roommate-name').value = '';
         closeAvatarModal();
       });
     }
 
     function deleteRoommate(id) {
-      if (confirm('Rimuovere questo inquilino?')) {
+      if (confirm('Rimuovere questa persona?')) {
         db.collection('inquilini').doc(id).delete();
       }
     }
