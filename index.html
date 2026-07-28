@@ -168,7 +168,11 @@
             <span onclick="selectIcon(this, 'fa-umbrella-beach')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-umbrella-beach"></i></span>
           </div>
         </div>
-        <button onclick="saveCustomTab()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-emerald-700">Salva Scheda</button>
+
+        <div class="space-y-2 pt-2">
+          <button onclick="saveCustomTab()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-emerald-700">Salva Scheda</button>
+          <button id="delete-tab-btn" onclick="deleteTab()" class="w-full bg-rose-50 text-rose-600 border border-rose-200 py-2 rounded-xl text-xs font-bold hover:bg-rose-100 hidden">🗑️ Elimina Scheda</button>
+        </div>
       </div>
     </div>
   </div>
@@ -296,6 +300,7 @@
 
     let currentStatusData = {};
     let customTabsList = [];
+    let hiddenTabsList = [];
     let currentActiveListTab = null;
     let currentActiveSubtasksTab = null;
     let selectedDateStr = new Date().toISOString().split('T')[0];
@@ -344,6 +349,7 @@
       if (doc.exists) {
         currentStatusData = doc.data();
         customTabsList = currentStatusData.customTabs || [];
+        hiddenTabsList = currentStatusData.hiddenTabs || [];
         
         updateGateButtonUI(currentStatusData.gateOpen || false);
         checkAutoReset();
@@ -351,7 +357,7 @@
         
         if (currentActiveSubtasksTab) renderSubtasksModal();
       } else {
-        db.collection('casa').doc('stati').set({ spesa: 0, monnezza: 0, orto: 0, pulizie: 0, gateOpen: false, customTabs: [] });
+        db.collection('casa').doc('stati').set({ spesa: 0, monnezza: 0, orto: 0, pulizie: 0, gateOpen: false, customTabs: [], hiddenTabs: [] });
       }
     });
 
@@ -361,7 +367,8 @@
       const todayStr = now.toISOString().split('T')[0];
       const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       
-      const allTabs = [...defaultTabs, ...customTabsList];
+      const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
+      const allTabs = [...visibleDefaults, ...customTabsList];
       let updates = {};
       let resetOccurred = false;
 
@@ -384,7 +391,9 @@
     function renderGrid() {
       const grid = document.getElementById('status-grid');
       grid.innerHTML = '';
-      const allTabs = [...defaultTabs, ...customTabsList];
+      
+      const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
+      const allTabs = [...visibleDefaults, ...customTabsList];
 
       allTabs.forEach(tab => {
         const col = document.createElement('div');
@@ -437,13 +446,15 @@
       db.collection('casa').doc('stati').update({ [key]: nextIdx });
     }
 
-    // 4. CREA / MODIFICA TAB
+    // 4. CREA / MODIFICA / ELIMINA TAB
     function openCustomTabModal(tabId = false) {
       const modal = document.getElementById('custom-tab-modal');
       const title = document.getElementById('modal-tab-title');
+      const deleteBtn = document.getElementById('delete-tab-btn');
       
       if (tabId) {
-        const allTabs = [...defaultTabs, ...customTabsList];
+        const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
+        const allTabs = [...visibleDefaults, ...customTabsList];
         const tab = allTabs.find(t => t.id === tabId);
         if (!tab) return;
 
@@ -463,6 +474,8 @@
         } else {
           document.getElementById('subtasks-input-container').classList.add('hidden');
         }
+
+        deleteBtn.classList.remove('hidden');
       } else {
         title.innerText = "➕ Tab Personalizzato";
         document.getElementById('editing-tab-id').value = "";
@@ -471,6 +484,7 @@
         document.getElementById('tab-auto-reset').checked = false;
         toggleResetTimeInput();
         toggleSubtasksInput();
+        deleteBtn.classList.add('hidden');
       }
 
       modal.classList.replace('hidden', 'flex');
@@ -478,6 +492,28 @@
 
     function closeCustomTabModal() {
       document.getElementById('custom-tab-modal').classList.replace('flex', 'hidden');
+    }
+
+    function deleteTab() {
+      const editingId = document.getElementById('editing-tab-id').value;
+      if (!editingId) return;
+
+      if (!confirm("Sei sicuro di voler eliminare questa scheda?")) return;
+
+      const isDefault = defaultTabs.some(t => t.id === editingId);
+
+      if (isDefault) {
+        let hidden = [...hiddenTabsList];
+        if (!hidden.includes(editingId)) hidden.push(editingId);
+        db.collection('casa').doc('stati').update({ hiddenTabs: hidden }).then(() => {
+          closeCustomTabModal();
+        });
+      } else {
+        let updatedCustoms = customTabsList.filter(t => t.id !== editingId);
+        db.collection('casa').doc('stati').update({ customTabs: updatedCustoms }).then(() => {
+          closeCustomTabModal();
+        });
+      }
     }
 
     function toggleSubtasksInput() {
@@ -510,17 +546,20 @@
       if (!name) return;
 
       let currentCustoms = [...customTabsList];
+      const isDefault = defaultTabs.some(t => t.id === editingId);
 
       if (editingId) {
-        let idx = currentCustoms.findIndex(t => t.id === editingId);
-        if (idx !== -1) {
-          currentCustoms[idx].name = name;
-          currentCustoms[idx].icon = selectedIconClass;
-          currentCustoms[idx].autoReset = autoReset;
-          currentCustoms[idx].resetTime = resetTime;
-          if (currentCustoms[idx].type === 'subtasks') {
-            const subInput = document.getElementById('tab-subtasks').value;
-            currentCustoms[idx].subtasks = subInput ? subInput.split(',').map(s => s.trim()).filter(s => s) : [];
+        if (!isDefault) {
+          let idx = currentCustoms.findIndex(t => t.id === editingId);
+          if (idx !== -1) {
+            currentCustoms[idx].name = name;
+            currentCustoms[idx].icon = selectedIconClass;
+            currentCustoms[idx].autoReset = autoReset;
+            currentCustoms[idx].resetTime = resetTime;
+            if (currentCustoms[idx].type === 'subtasks') {
+              const subInput = document.getElementById('tab-subtasks').value;
+              currentCustoms[idx].subtasks = subInput ? subInput.split(',').map(s => s.trim()).filter(s => s) : [];
+            }
           }
         }
       } else {
@@ -687,7 +726,8 @@
 
     function renderSubtasksModal() {
       if (!currentActiveSubtasksTab) return;
-      const allTabs = [...defaultTabs, ...customTabsList];
+      const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
+      const allTabs = [...visibleDefaults, ...customTabsList];
       const tab = allTabs.find(t => t.id === currentActiveSubtasksTab);
       if (!tab) return;
 
