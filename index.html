@@ -279,8 +279,6 @@
       appId: "1:274673117994:web:a2d31710afdc0c2dd14c53"
     };
 
-    const CANCELLO_AMICI_URL = "https://ghigna.github.io/ppp/";
-
     function showError(msg) {
       const banner = document.getElementById('error-banner');
       banner.innerText = msg;
@@ -312,18 +310,14 @@
     let selectedIconClass = 'fa-cat';
     let calendarEvents = [];
 
-    // 1. SINCRONIZZAZIONE STATO CANCELLO TRA CASA CINGHIALA E CANCELLO AMICI
+    // 1. CAMBIO STATO CANCELLO SENZA REINDIRIZZAMENTO
     function toggleGate() {
       const isCurrentlyOpen = currentStatusData.gateOpen || false;
       const nextState = !isCurrentlyOpen;
 
-      // Aggiorna lo stato su Firestore (sincronizzato con la pagina Cancello Amici)
-      db.collection('casa').doc('stati').update({ gateOpen: nextState }).then(() => {
-        // Una volta aggiornato lo stato, apre la pagina Cancello Amici
-        window.open(CANCELLO_AMICI_URL, '_blank');
-      }).catch(err => {
-        // In caso di errore di rete, apre comunque il link
-        window.open(CANCELLO_AMICI_URL, '_blank');
+      // Inverte lo stato direttamente nel database Firebase in tempo reale
+      db.collection('casa').doc('stati').update({ gateOpen: nextState }).catch(err => {
+        showError("Errore aggiornamento cancello: " + err.message);
       });
     }
 
@@ -598,7 +592,7 @@
       });
     }
 
-    // 5. GESTIONE INQUILINI / ROOMMATES CON TOGGLE PRESENZA (ONLINE/OFFLINE)
+    // 5. GESTIONE INQUILINI / ROOMMATES CON TOGGLE PRESENZA
     db.collection('inquilini').onSnapshot(snapshot => {
       const list = document.getElementById('roommates-list');
       list.innerHTML = '';
