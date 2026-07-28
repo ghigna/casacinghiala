@@ -93,7 +93,7 @@
         <div id="day-events-list" class="space-y-2 text-xs">
           <p class="text-slate-400 italic">Nessun evento programmato.</p>
         </div>
-        <button onclick="openAddEventModal()" class="w-full bg-indigo-50 text-indigo-600 font-bold py-2 rounded-xl text-xs hover:bg-indigo-100 transition-all font-semibold">
+        <button onclick="openAddEventModal()" class="w-full bg-indigo-50 text-indigo-600 font-bold py-2 rounded-xl text-xs hover:bg-indigo-100 transition-all">
           + Aggiungi Ospite o Vacanza
         </button>
       </section>
@@ -138,15 +138,31 @@
           </select>
         </div>
 
-        <!-- Option Auto Reset -->
+        <!-- Opzioni Auto Reset Avanzate -->
         <div class="pt-2 border-t">
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" id="tab-auto-reset" onchange="toggleResetTimeInput()" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
-            <span class="text-xs font-bold text-slate-700">Reset automatico giornaliero</span>
+            <span class="text-xs font-bold text-slate-700">Reset automatico</span>
           </label>
-          <div id="reset-time-container" class="hidden mt-2">
-            <label class="block text-[11px] font-bold text-slate-500 mb-1">Orario di Reset</label>
-            <input type="time" id="tab-reset-time" value="04:00" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          
+          <div id="reset-time-container" class="hidden mt-2 space-y-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Modalità Reset</label>
+              <select id="tab-reset-mode" onchange="updateResetModeUI()" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="hours">Dopo X ore da "Tutto OK"</option>
+                <option value="fixed">Ad un orario fisso ogni giorno</option>
+              </select>
+            </div>
+
+            <div id="reset-hours-wrapper">
+              <label class="block text-[11px] font-bold text-slate-500 mb-1">Ore di attesa (es. 12)</label>
+              <input type="number" id="tab-reset-hours" min="1" max="168" value="12" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div id="reset-fixed-wrapper" class="hidden">
+              <label class="block text-[11px] font-bold text-slate-500 mb-1">Orario di Reset quotidiano</label>
+              <input type="time" id="tab-reset-time" value="04:00" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
           </div>
         </div>
 
@@ -162,13 +178,13 @@
             <span onclick="selectIcon(this, 'fa-cat')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-indigo-500"><i class="fa-solid fa-cat"></i></span>
             <span onclick="selectIcon(this, 'fa-dog')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-dog"></i></span>
             <span onclick="selectIcon(this, 'fa-paw')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-paw"></i></span>
+            <span onclick="selectIcon(this, 'fa-seedling')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-seedling"></i></span>
             <span onclick="selectIcon(this, 'fa-plant-wilt')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-plant-wilt"></i></span>
             <span onclick="selectIcon(this, 'fa-car')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-car"></i></span>
             <span onclick="selectIcon(this, 'fa-wrench')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-wrench"></i></span>
             <span onclick="selectIcon(this, 'fa-utensils')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-utensils"></i></span>
             <span onclick="selectIcon(this, 'fa-star')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-star"></i></span>
             <span onclick="selectIcon(this, 'fa-gamepad')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-gamepad"></i></span>
-            <span onclick="selectIcon(this, 'fa-umbrella-beach')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-umbrella-beach"></i></span>
           </div>
         </div>
 
@@ -297,7 +313,7 @@
     const defaultTabs = [
       { id: 'spesa', name: 'Spesa', icon: 'fa-cart-shopping', type: 'list' },
       { id: 'monnezza', name: 'Monnezza', icon: 'fa-trash-can', type: 'status' },
-      { id: 'orto', name: 'Orto', icon: 'fa-seedling', type: 'status' },
+      { id: 'orto', name: 'Orto', icon: 'fa-seedling', type: 'status', autoReset: true, resetMode: 'hours', resetHours: 12 },
       { id: 'pulizie', name: 'Pulizie', icon: 'fa-broom', type: 'subtasks', subtasks: ['Pavimenti', 'Cucina', 'Bagni', 'Balcone', 'Salone'] }
     ];
 
@@ -310,12 +326,28 @@
     let selectedIconClass = 'fa-cat';
     let calendarEvents = [];
 
-    // 1. CAMBIO STATO CANCELLO SENZA REINDIRIZZAMENTO
+    // Helper: Formattazione timestamp "fatto alle..."
+    function formatLastDone(timestamp) {
+      if (!timestamp) return 'fatto mai';
+      const d = new Date(timestamp);
+      const now = new Date();
+      
+      const timeStr = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+      
+      // Controlla se la data è di oggi
+      if (d.toDateString() === now.toDateString()) {
+        return `fatto alle ${timeStr}`;
+      } else {
+        const dateStr = d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+        return `fatto il ${dateStr} ${timeStr}`;
+      }
+    }
+
+    // 1. CAMBIO STATO CANCELLO
     function toggleGate() {
       const isCurrentlyOpen = currentStatusData.gateOpen || false;
       const nextState = !isCurrentlyOpen;
 
-      // Inverte lo stato direttamente nel database Firebase in tempo reale
       db.collection('casa').doc('stati').update({ gateOpen: nextState }).catch(err => {
         showError("Errore aggiornamento cancello: " + err.message);
       });
@@ -353,7 +385,7 @@
       }
     }
 
-    // 3. ASCOLTO STATI IN TEMPO REALE E LOGICA RESET
+    // 3. ASCOLTO STATI E RESET AUTOMATICO
     db.collection('casa').doc('stati').onSnapshot(doc => {
       if (doc.exists) {
         currentStatusData = doc.data();
@@ -370,8 +402,10 @@
       }
     });
 
+    // Controllo Periodico Auto Reset (a tempo o a orario)
     function checkAutoReset() {
       const now = new Date();
+      const nowMs = now.getTime();
       const todayStr = now.toISOString().split('T')[0];
       const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       
@@ -381,12 +415,29 @@
       let resetOccurred = false;
 
       allTabs.forEach(tab => {
-        if (tab.autoReset && tab.resetTime) {
-          const lastReset = currentStatusData[`lastReset_${tab.id}`] || "";
-          if (currentTimeStr >= tab.resetTime && lastReset !== todayStr) {
-            updates[tab.id] = 0;
-            updates[`lastReset_${tab.id}`] = todayStr;
-            resetOccurred = true;
+        if (tab.autoReset) {
+          const mode = tab.resetMode || 'hours';
+          
+          if (mode === 'hours') {
+            const hours = Number(tab.resetHours) || 12;
+            const lastDoneMs = currentStatusData[`lastDone_${tab.id}`] || 0;
+            const currentState = currentStatusData[tab.id] || 0;
+
+            if (currentState === 0 && lastDoneMs > 0) {
+              const diffHours = (nowMs - lastDoneMs) / (1000 * 60 * 60);
+              if (diffHours >= hours) {
+                updates[tab.id] = 1; // 1 sta per 'Da Fare'
+                resetOccurred = true;
+              }
+            }
+          } else if (mode === 'fixed') {
+            const resetTime = tab.resetTime || "04:00";
+            const lastReset = currentStatusData[`lastReset_${tab.id}`] || "";
+            if (currentTimeStr >= resetTime && lastReset !== todayStr) {
+              updates[tab.id] = 1; // 1 sta per 'Da Fare'
+              updates[`lastReset_${tab.id}`] = todayStr;
+              resetOccurred = true;
+            }
           }
         }
       });
@@ -395,6 +446,9 @@
         db.collection('casa').doc('stati').update(updates);
       }
     }
+
+    // Esegue il controllo ogni 30 secondi
+    setInterval(checkAutoReset, 30000);
 
     function renderGrid() {
       const grid = document.getElementById('status-grid');
@@ -407,13 +461,17 @@
         const col = document.createElement('div');
         col.className = 'relative';
 
+        const lastDoneTimestamp = currentStatusData[`lastDone_${tab.id}`];
+        const lastDoneText = formatLastDone(lastDoneTimestamp);
+
         if (tab.type === 'list') {
           const stateIdx = currentStatusData[tab.id] || 0;
           col.innerHTML = `
-            <button onclick="changeStatus('${tab.id}')" class="w-full ${states[stateIdx].color} text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95 pb-10">
-              <i class="fa-solid ${tab.icon} text-3xl"></i>
-              <span class="font-bold text-base">${tab.name}</span>
+            <button onclick="changeStatus('${tab.id}')" class="w-full ${states[stateIdx].color} text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-1.5 transition-all active:scale-95 pb-10">
+              <i class="fa-solid ${tab.icon} text-3xl mb-1"></i>
+              <span class="font-bold text-base leading-tight">${tab.name}</span>
               <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
+              <span class="text-[9px] text-white/80 font-medium pt-0.5"><i class="fa-regular fa-clock mr-1"></i>${lastDoneText}</span>
             </button>
             <button onclick="openDynamicListModal('${tab.id}', '${tab.name}')" class="absolute bottom-2 left-2 right-2 bg-black/20 active:bg-black/40 text-white text-xs font-semibold py-1 rounded-xl backdrop-blur-md transition-all flex items-center justify-center gap-1">
               <i class="fa-solid fa-list-check"></i> Apri Lista
@@ -427,20 +485,22 @@
           subList.forEach((s, idx) => { if ((subData[idx] || 0) === 0) doneCount++; });
 
           col.innerHTML = `
-            <button onclick="openDynamicSubtasksModal('${tab.id}', '${tab.name}')" class="w-full bg-violet-600 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
-              <i class="fa-solid ${tab.icon} text-3xl"></i>
-              <span class="font-bold text-base">${tab.name}</span>
+            <button onclick="openDynamicSubtasksModal('${tab.id}', '${tab.name}')" class="w-full bg-violet-600 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-1.5 transition-all active:scale-95">
+              <i class="fa-solid ${tab.icon} text-3xl mb-1"></i>
+              <span class="font-bold text-base leading-tight">${tab.name}</span>
               <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${doneCount}/${subList.length} Fatti</span>
+              <span class="text-[9px] text-white/80 font-medium pt-0.5"><i class="fa-regular fa-clock mr-1"></i>${lastDoneText}</span>
             </button>
             <button onclick="openCustomTabModal('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
           `;
         } else {
           const stateIdx = currentStatusData[tab.id] || 0;
           col.innerHTML = `
-            <button onclick="changeStatus('${tab.id}')" class="w-full ${states[stateIdx].color} text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
-              <i class="fa-solid ${tab.icon} text-3xl"></i>
-              <span class="font-bold text-base">${tab.name}</span>
+            <button onclick="changeStatus('${tab.id}')" class="w-full ${states[stateIdx].color} text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-1.5 transition-all active:scale-95">
+              <i class="fa-solid ${tab.icon} text-3xl mb-1"></i>
+              <span class="font-bold text-base leading-tight">${tab.name}</span>
               <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
+              <span class="text-[9px] text-white/80 font-medium pt-0.5"><i class="fa-regular fa-clock mr-1"></i>${lastDoneText}</span>
             </button>
             <button onclick="openCustomTabModal('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
           `;
@@ -451,7 +511,14 @@
 
     function changeStatus(key) {
       const nextIdx = ((currentStatusData[key] || 0) + 1) % states.length;
-      db.collection('casa').doc('stati').update({ [key]: nextIdx });
+      let updates = { [key]: nextIdx };
+
+      // Registra sempre la data/ora precisa ogni volta che viene cliccato "Tutto OK" (indice 0)
+      if (nextIdx === 0) {
+        updates[`lastDone_${key}`] = Date.now();
+      }
+
+      db.collection('casa').doc('stati').update(updates);
     }
 
     // 4. CREA / MODIFICA / ELIMINA TAB
@@ -473,7 +540,10 @@
         document.getElementById('type-select-container').classList.add('hidden');
 
         document.getElementById('tab-auto-reset').checked = tab.autoReset || false;
+        document.getElementById('tab-reset-mode').value = tab.resetMode || "hours";
+        document.getElementById('tab-reset-hours').value = tab.resetHours || 12;
         document.getElementById('tab-reset-time').value = tab.resetTime || "04:00";
+        
         toggleResetTimeInput();
 
         if (tab.type === 'subtasks') {
@@ -490,6 +560,8 @@
         document.getElementById('tab-name').value = "";
         document.getElementById('type-select-container').classList.remove('hidden');
         document.getElementById('tab-auto-reset').checked = false;
+        document.getElementById('tab-reset-mode').value = "hours";
+        document.getElementById('tab-reset-hours').value = 12;
         toggleResetTimeInput();
         toggleSubtasksInput();
         deleteBtn.classList.add('hidden');
@@ -534,8 +606,26 @@
     function toggleResetTimeInput() {
       const checked = document.getElementById('tab-auto-reset').checked;
       const container = document.getElementById('reset-time-container');
-      if (checked) container.classList.remove('hidden');
-      else container.classList.add('hidden');
+      if (checked) {
+        container.classList.remove('hidden');
+        updateResetModeUI();
+      } else {
+        container.classList.add('hidden');
+      }
+    }
+
+    function updateResetModeUI() {
+      const mode = document.getElementById('tab-reset-mode').value;
+      const hoursWrapper = document.getElementById('reset-hours-wrapper');
+      const fixedWrapper = document.getElementById('reset-fixed-wrapper');
+
+      if (mode === 'hours') {
+        hoursWrapper.classList.remove('hidden');
+        fixedWrapper.classList.add('hidden');
+      } else {
+        hoursWrapper.classList.add('hidden');
+        fixedWrapper.classList.remove('hidden');
+      }
     }
 
     function selectIcon(element, iconName) {
@@ -549,6 +639,8 @@
       const name = document.getElementById('tab-name').value.trim();
       const type = document.getElementById('tab-type').value;
       const autoReset = document.getElementById('tab-auto-reset').checked;
+      const resetMode = document.getElementById('tab-reset-mode').value;
+      const resetHours = Number(document.getElementById('tab-reset-hours').value) || 12;
       const resetTime = document.getElementById('tab-reset-time').value;
 
       if (!name) return;
@@ -557,12 +649,22 @@
       const isDefault = defaultTabs.some(t => t.id === editingId);
 
       if (editingId) {
-        if (!isDefault) {
+        if (isDefault) {
+          let idx = defaultTabs.findIndex(t => t.id === editingId);
+          if (idx !== -1) {
+            defaultTabs[idx].autoReset = autoReset;
+            defaultTabs[idx].resetMode = resetMode;
+            defaultTabs[idx].resetHours = resetHours;
+            defaultTabs[idx].resetTime = resetTime;
+          }
+        } else {
           let idx = currentCustoms.findIndex(t => t.id === editingId);
           if (idx !== -1) {
             currentCustoms[idx].name = name;
             currentCustoms[idx].icon = selectedIconClass;
             currentCustoms[idx].autoReset = autoReset;
+            currentCustoms[idx].resetMode = resetMode;
+            currentCustoms[idx].resetHours = resetHours;
             currentCustoms[idx].resetTime = resetTime;
             if (currentCustoms[idx].type === 'subtasks') {
               const subInput = document.getElementById('tab-subtasks').value;
@@ -578,6 +680,8 @@
           icon: selectedIconClass, 
           type: type,
           autoReset: autoReset,
+          resetMode: resetMode,
+          resetHours: resetHours,
           resetTime: resetTime
         };
         if (type === 'subtasks') {
@@ -592,7 +696,7 @@
       });
     }
 
-    // 5. GESTIONE INQUILINI / ROOMMATES CON TOGGLE PRESENZA
+    // 5. GESTIONE INQUILINI
     db.collection('inquilini').onSnapshot(snapshot => {
       const list = document.getElementById('roommates-list');
       list.innerHTML = '';
@@ -760,7 +864,15 @@
       const nextIdx = (currentIdx + 1) % states.length;
 
       const updatedSubData = { ...currentSubData, [subIdx]: nextIdx };
-      db.collection('casa').doc('stati').update({ [`sub_${tabId}`]: updatedSubData });
+
+      let updates = { [`sub_${tabId}`]: updatedSubData };
+      
+      // Se il sotto-turno diventa "Tutto OK", aggiorniamo anche la data globale del tab
+      if (nextIdx === 0) {
+        updates[`lastDone_${tabId}`] = Date.now();
+      }
+
+      db.collection('casa').doc('stati').update(updates);
     }
 
     // 8. CALENDARIO CON EVENTI MULTI-GIORNO
