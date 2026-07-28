@@ -279,7 +279,6 @@
       appId: "1:274673117994:web:a2d31710afdc0c2dd14c53"
     };
 
-    // 🔗 INDIRIZZO DELLA PAGINA "CANCELLO AMICI"
     const CANCELLO_AMICI_URL = "https://ghigna.github.io/ppp/";
 
     function showError(msg) {
@@ -313,16 +312,19 @@
     let selectedIconClass = 'fa-cat';
     let calendarEvents = [];
 
-    // 1. GESTIONE INTERRUTTORE CANCELLO E COLLEGAMENTO "CANCELLO AMICI"
+    // 1. SINCRONIZZAZIONE STATO CANCELLO TRA CASA CINGHIALA E CANCELLO AMICI
     function toggleGate() {
       const isCurrentlyOpen = currentStatusData.gateOpen || false;
       const nextState = !isCurrentlyOpen;
 
-      // Aggiorna lo stato su Firestore
-      db.collection('casa').doc('stati').update({ gateOpen: nextState });
-
-      // Apri il link di Cancello Amici
-      window.open(CANCELLO_AMICI_URL, '_blank');
+      // Aggiorna lo stato su Firestore (sincronizzato con la pagina Cancello Amici)
+      db.collection('casa').doc('stati').update({ gateOpen: nextState }).then(() => {
+        // Una volta aggiornato lo stato, apre la pagina Cancello Amici
+        window.open(CANCELLO_AMICI_URL, '_blank');
+      }).catch(err => {
+        // In caso di errore di rete, apre comunque il link
+        window.open(CANCELLO_AMICI_URL, '_blank');
+      });
     }
 
     function updateGateButtonUI(isOpen) {
@@ -341,7 +343,7 @@
       }
     }
 
-    // 2. NAVIGAZIONE TAB (Home / Calendario)
+    // 2. NAVIGAZIONE TAB
     function switchTab(page) {
       if(page === 'home') {
         document.getElementById('page-home').classList.remove('hidden');
@@ -374,7 +376,6 @@
       }
     });
 
-    // CONTROLLO RESET AUTOMATICO
     function checkAutoReset() {
       const now = new Date();
       const todayStr = now.toISOString().split('T')[0];
@@ -610,7 +611,6 @@
         const isPresent = data.present || false;
         const tag = document.createElement('div');
         
-        // Stili dinamici: Verde se Online (Presente), Grigio se Offline
         const bgClass = isPresent ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-300' : 'bg-slate-200 text-slate-600';
         const dotColor = isPresent ? 'bg-emerald-200 animate-pulse' : 'bg-slate-400';
 
