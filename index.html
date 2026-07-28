@@ -62,7 +62,7 @@
       <div id="status-grid" class="grid grid-cols-2 gap-3"></div>
 
       <!-- BOTTONE AGGIUNGI NUOVO TAB -->
-      <button onclick="openCustomTabModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
+      <button onclick="openCustomTabModal(false)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
         <i class="fa-solid fa-plus-circle text-lg"></i> Aggiungi Tab Personalizzato
       </button>
     </main>
@@ -90,7 +90,7 @@
         <div id="day-events-list" class="space-y-2 text-xs">
           <p class="text-slate-400 italic">Nessun evento programmato.</p>
         </div>
-        <button onclick="openAddEventModal()" class="w-full bg-indigo-50 text-indigo-600 font-bold py-2 rounded-xl text-xs hover:bg-indigo-100 transition-all">
+        <button onclick="openAddEventModal()" class="w-full bg-indigo-50 text-indigo-600 font-bold py-2 rounded-xl text-xs hover:bg-indigo-100 transition-all font-semibold">
           + Aggiungi Ospite o Vacanza
         </button>
       </section>
@@ -135,6 +135,18 @@
           </select>
         </div>
 
+        <!-- Option Auto Reset -->
+        <div class="pt-2 border-t">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="tab-auto-reset" onchange="toggleResetTimeInput()" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+            <span class="text-xs font-bold text-slate-700">Reset automatico giornaliero</span>
+          </label>
+          <div id="reset-time-container" class="hidden mt-2">
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">Orario di Reset</label>
+            <input type="time" id="tab-reset-time" value="04:00" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
         <!-- Input Sotto-Turni -->
         <div id="subtasks-input-container" class="hidden">
           <label class="block text-xs font-bold text-slate-600 mb-1">Sotto-Turni (Separati da virgola)</label>
@@ -161,7 +173,7 @@
     </div>
   </div>
 
-  <!-- MODALE EVENTO CALENDARIO -->
+  <!-- MODALE EVENTO CALENDARIO MULTI-GIORNO -->
   <div id="event-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
     <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b pb-2">
@@ -181,6 +193,16 @@
         <div>
           <label class="block text-xs font-bold text-slate-600 mb-1">Nome / Descrizione</label>
           <input type="text" id="event-title" placeholder="Es. Marco & Sara / Mare a Gallipoli" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Data Inizio</label>
+            <input type="date" id="event-start-date" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Data Fine</label>
+            <input type="date" id="event-end-date" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-600 mb-1">Emoji / Avatar</label>
@@ -277,13 +299,12 @@
     let currentActiveListTab = null;
     let currentActiveSubtasksTab = null;
     let selectedDateStr = new Date().toISOString().split('T')[0];
+    let selectedIconClass = 'fa-cat';
 
-    // 1. GESTIONE INTERRUTTORE CANCELLO PPP
+    // 1. GESTIONE INTERRUTTORE CANCELLO
     function toggleGate() {
       const isCurrentlyOpen = currentStatusData.gateOpen || false;
-      const newState = !isCurrentlyOpen;
-      
-      db.collection('casa').doc('stati').update({ gateOpen: newState });
+      db.collection('casa').doc('stati').update({ gateOpen: !isCurrentlyOpen });
     }
 
     function updateGateButtonUI(isOpen) {
@@ -318,25 +339,47 @@
       }
     }
 
-    // 3. ASCOLTO STATI IN TEMPO REALE
+    // 3. ASCOLTO STATI IN TEMPO REALE E LOGICA RESET
     db.collection('casa').doc('stati').onSnapshot(doc => {
       if (doc.exists) {
         currentStatusData = doc.data();
         customTabsList = currentStatusData.customTabs || [];
         
-        // Aggiorna Pulsante Cancello
         updateGateButtonUI(currentStatusData.gateOpen || false);
-
+        checkAutoReset();
         renderGrid();
         
-        // Aggiorna Modale Sotto-turni Live se aperta
-        if (currentActiveSubtasksTab) {
-          renderSubtasksModal();
-        }
+        if (currentActiveSubtasksTab) renderSubtasksModal();
       } else {
         db.collection('casa').doc('stati').set({ spesa: 0, monnezza: 0, orto: 0, pulizie: 0, gateOpen: false, customTabs: [] });
       }
     });
+
+    // CONTROLLO RESET AUTOMATICO
+    function checkAutoReset() {
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      const allTabs = [...defaultTabs, ...customTabsList];
+      let updates = {};
+      let resetOccurred = false;
+
+      allTabs.forEach(tab => {
+        if (tab.autoReset && tab.resetTime) {
+          const lastReset = currentStatusData[`lastReset_${tab.id}`] || "";
+          if (currentTimeStr >= tab.resetTime && lastReset !== todayStr) {
+            updates[tab.id] = 0;
+            updates[`lastReset_${tab.id}`] = todayStr;
+            resetOccurred = true;
+          }
+        }
+      });
+
+      if (resetOccurred) {
+        db.collection('casa').doc('stati').update(updates);
+      }
+    }
 
     function renderGrid() {
       const grid = document.getElementById('status-grid');
@@ -358,7 +401,7 @@
             <button onclick="openDynamicListModal('${tab.id}', '${tab.name}')" class="absolute bottom-2 left-2 right-2 bg-black/20 active:bg-black/40 text-white text-xs font-semibold py-1 rounded-xl backdrop-blur-md transition-all flex items-center justify-center gap-1">
               <i class="fa-solid fa-list-check"></i> Apri Lista
             </button>
-            <button onclick="editTab('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+            <button onclick="openCustomTabModal('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
           `;
         } else if (tab.type === 'subtasks') {
           const subData = currentStatusData[`sub_${tab.id}`] || {};
@@ -372,7 +415,7 @@
               <span class="font-bold text-base">${tab.name}</span>
               <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${doneCount}/${subList.length} Fatti</span>
             </button>
-            <button onclick="editTab('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+            <button onclick="openCustomTabModal('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
           `;
         } else {
           const stateIdx = currentStatusData[tab.id] || 0;
@@ -382,7 +425,7 @@
               <span class="font-bold text-base">${tab.name}</span>
               <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
             </button>
-            <button onclick="editTab('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+            <button onclick="openCustomTabModal('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
           `;
         }
         grid.appendChild(col);
@@ -394,69 +437,115 @@
       db.collection('casa').doc('stati').update({ [key]: nextIdx });
     }
 
-    // 4. MODIFICA TAB
-    let selectedIconClass = 'fa-cat';
-    function editTab(tabId) {
-      const allTabs = [...defaultTabs, ...customTabsList];
-      const tab = allTabs.find(t => t.id === tabId);
-      if (!tab) return;
+    // 4. CREA / MODIFICA TAB
+    function openCustomTabModal(tabId = false) {
+      const modal = document.getElementById('custom-tab-modal');
+      const title = document.getElementById('modal-tab-title');
+      
+      if (tabId) {
+        const allTabs = [...defaultTabs, ...customTabsList];
+        const tab = allTabs.find(t => t.id === tabId);
+        if (!tab) return;
 
-      document.getElementById('modal-tab-title').innerText = "✏️ Modifica Tab";
-      document.getElementById('editing-tab-id').value = tab.id;
-      document.getElementById('tab-name').value = tab.name;
-      document.getElementById('tab-type').value = tab.type;
-      document.getElementById('type-select-container').classList.add('hidden');
+        title.innerText = "✏️ Modifica Tab";
+        document.getElementById('editing-tab-id').value = tab.id;
+        document.getElementById('tab-name').value = tab.name;
+        document.getElementById('tab-type').value = tab.type;
+        document.getElementById('type-select-container').classList.add('hidden');
 
-      if (tab.type === 'subtasks') {
-        document.getElementById('subtasks-input-container').classList.remove('hidden');
-        document.getElementById('tab-subtasks').value = (tab.subtasks || []).join(', ');
+        document.getElementById('tab-auto-reset').checked = tab.autoReset || false;
+        document.getElementById('tab-reset-time').value = tab.resetTime || "04:00";
+        toggleResetTimeInput();
+
+        if (tab.type === 'subtasks') {
+          document.getElementById('subtasks-input-container').classList.remove('hidden');
+          document.getElementById('tab-subtasks').value = (tab.subtasks || []).join(', ');
+        } else {
+          document.getElementById('subtasks-input-container').classList.add('hidden');
+        }
       } else {
-        document.getElementById('subtasks-input-container').classList.add('hidden');
+        title.innerText = "➕ Tab Personalizzato";
+        document.getElementById('editing-tab-id').value = "";
+        document.getElementById('tab-name').value = "";
+        document.getElementById('type-select-container').classList.remove('hidden');
+        document.getElementById('tab-auto-reset').checked = false;
+        toggleResetTimeInput();
+        toggleSubtasksInput();
       }
 
-      openCustomTabModal();
+      modal.classList.replace('hidden', 'flex');
+    }
+
+    function closeCustomTabModal() {
+      document.getElementById('custom-tab-modal').classList.replace('flex', 'hidden');
+    }
+
+    function toggleSubtasksInput() {
+      const type = document.getElementById('tab-type').value;
+      const subContainer = document.getElementById('subtasks-input-container');
+      if (type === 'subtasks') subContainer.classList.remove('hidden');
+      else subContainer.classList.add('hidden');
+    }
+
+    function toggleResetTimeInput() {
+      const checked = document.getElementById('tab-auto-reset').checked;
+      const container = document.getElementById('reset-time-container');
+      if (checked) container.classList.remove('hidden');
+      else container.classList.add('hidden');
+    }
+
+    function selectIcon(element, iconName) {
+      selectedIconClass = iconName;
+      document.querySelectorAll('#icon-picker span').forEach(el => el.classList.replace('border-indigo-500', 'border-transparent'));
+      element.classList.replace('border-transparent', 'border-indigo-500');
     }
 
     function saveCustomTab() {
       const editingId = document.getElementById('editing-tab-id').value;
       const name = document.getElementById('tab-name').value.trim();
       const type = document.getElementById('tab-type').value;
+      const autoReset = document.getElementById('tab-auto-reset').checked;
+      const resetTime = document.getElementById('tab-reset-time').value;
+
       if (!name) return;
 
+      let currentCustoms = [...customTabsList];
+
       if (editingId) {
-        let allCustoms = [...customTabsList];
-        let idx = allCustoms.findIndex(t => t.id === editingId);
-        
-        let targetTab = idx !== -1 ? allCustoms[idx] : defaultTabs.find(t => t.id === editingId);
-        targetTab.name = name;
-        targetTab.icon = selectedIconClass;
-
-        if (targetTab.type === 'subtasks') {
-          const subInput = document.getElementById('tab-subtasks').value;
-          targetTab.subtasks = subInput ? subInput.split(',').map(s => s.trim()).filter(s => s) : [];
-        }
-
+        let idx = currentCustoms.findIndex(t => t.id === editingId);
         if (idx !== -1) {
-          db.collection('casa').doc('stati').update({ customTabs: allCustoms });
-        } else {
-          db.collection('casa').doc('stati').update({ customTabs: [...customTabsList, targetTab] });
+          currentCustoms[idx].name = name;
+          currentCustoms[idx].icon = selectedIconClass;
+          currentCustoms[idx].autoReset = autoReset;
+          currentCustoms[idx].resetTime = resetTime;
+          if (currentCustoms[idx].type === 'subtasks') {
+            const subInput = document.getElementById('tab-subtasks').value;
+            currentCustoms[idx].subtasks = subInput ? subInput.split(',').map(s => s.trim()).filter(s => s) : [];
+          }
         }
       } else {
         const newId = 'tab_' + Date.now();
-        let newTabObj = { id: newId, name: name, icon: selectedIconClass, type: type };
+        let newTabObj = { 
+          id: newId, 
+          name: name, 
+          icon: selectedIconClass, 
+          type: type,
+          autoReset: autoReset,
+          resetTime: resetTime
+        };
         if (type === 'subtasks') {
           const subInput = document.getElementById('tab-subtasks').value;
           newTabObj.subtasks = subInput ? subInput.split(',').map(s => s.trim()).filter(s => s) : ['Incarico 1'];
         }
-        db.collection('casa').doc('stati').update({
-          customTabs: [...customTabsList, newTabObj],
-          [newId]: 0
-        });
+        currentCustoms.push(newTabObj);
       }
-      closeCustomTabModal();
+
+      db.collection('casa').doc('stati').update({ customTabs: currentCustoms }).then(() => {
+        closeCustomTabModal();
+      });
     }
 
-    // 5. CALENDARIO
+    // 5. CALENDARIO CON EVENTI MULTI-GIORNO
     let currentMonth = new Date().getMonth();
     let currentYear = new Date().getFullYear();
 
@@ -490,7 +579,7 @@
           dayEl.onclick = () => selectCalendarDate(dayStr);
           
           let dots = dayEvents.map(e => e.emoji).join('');
-          dayEl.innerHTML = `<span>${day}</span><span class="text-[10px] mt-1">${dots}</span>`;
+          dayEl.innerHTML = `<span>${day}</span><span class="text-[10px] mt-1 overflow-hidden h-4">${dots}</span>`;
           daysGrid.appendChild(dayEl);
         }
         loadDayEvents(selectedDateStr, events[selectedDateStr] || []);
@@ -527,18 +616,53 @@
       });
     }
 
+    function openAddEventModal() {
+      document.getElementById('event-start-date').value = selectedDateStr;
+      document.getElementById('event-end-date').value = selectedDateStr;
+      document.getElementById('event-modal').classList.replace('hidden', 'flex');
+    }
+
+    function closeEventModal() {
+      document.getElementById('event-modal').classList.replace('flex', 'hidden');
+    }
+
     function saveCalendarEvent() {
       const type = document.getElementById('event-type').value;
       const title = document.getElementById('event-title').value.trim();
       const emoji = document.getElementById('event-emoji').value.trim() || '📅';
-      if (!title) return;
+      const startDateStr = document.getElementById('event-start-date').value;
+      const endDateStr = document.getElementById('event-end-date').value;
 
-      const docRef = db.collection('calendario').doc(selectedDateStr);
-      docRef.get().then(doc => {
-        let existing = doc.exists ? (doc.data().items || []) : [];
-        existing.push({ type, title, emoji });
-        docRef.set({ items: existing });
+      if (!title || !startDateStr || !endDateStr) return;
+
+      let start = new Date(startDateStr);
+      let end = new Date(endDateStr);
+
+      if (start > end) {
+        showError("La data di inizio non può essere successiva alla data di fine.");
+        return;
+      }
+
+      let promises = [];
+      let current = new Date(start);
+
+      while (current <= end) {
+        const dateStr = current.toISOString().split('T')[0];
+        const docRef = db.collection('calendario').doc(dateStr);
+
+        const p = docRef.get().then(doc => {
+          let existing = doc.exists ? (doc.data().items || []) : [];
+          existing.push({ type, title, emoji });
+          return docRef.set({ items: existing });
+        });
+
+        promises.push(p);
+        current.setDate(current.getDate() + 1);
+      }
+
+      Promise.all(promises).then(() => {
         closeEventModal();
+        renderCalendar();
       });
     }
 
@@ -605,19 +729,26 @@
       document.getElementById('dynamic-list-modal').classList.replace('hidden', 'flex');
     }
 
+    function closeDynamicListModal() {
+      document.getElementById('dynamic-list-modal').classList.replace('flex', 'hidden');
+      currentActiveListTab = null;
+    }
+
     function renderListItems() {
       if (!currentActiveListTab) return;
       const listContainer = document.getElementById('dynamic-list-items');
       listContainer.innerHTML = '';
 
-      db.collection('liste').doc(currentActiveListTab).get().then(doc => {
+      db.collection('liste').doc(currentActiveListTab).onSnapshot(doc => {
+        listContainer.innerHTML = '';
         const items = doc.exists ? (doc.data().items || []) : [];
-        items.forEach((item, index) => {
+
+        items.forEach((itemText, idx) => {
           const li = document.createElement('li');
-          li.className = "flex justify-between items-center bg-slate-100 p-2.5 rounded-xl border border-slate-200 text-sm";
+          li.className = "flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700";
           li.innerHTML = `
-            <span class="font-medium text-slate-700">${item}</span>
-            <button onclick="removeDynamicItem(${index})" class="text-rose-500 hover:text-rose-700 font-bold p-1"><i class="fa-solid fa-trash"></i></button>
+            <span>${itemText}</span>
+            <button onclick="removeDynamicItem(${idx})" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-xmark"></i></button>
           `;
           listContainer.appendChild(li);
         });
@@ -626,79 +757,69 @@
 
     function addDynamicItem() {
       const input = document.getElementById('dynamic-item-input');
-      const val = input.value.trim();
-      if (!val || !currentActiveListTab) return;
+      const text = input.value.trim();
+      if (!text || !currentActiveListTab) return;
 
       const docRef = db.collection('liste').doc(currentActiveListTab);
       docRef.get().then(doc => {
-        let existing = doc.exists ? (doc.data().items || []) : [];
-        existing.push(val);
-        docRef.set({ items: existing }).then(() => {
-          input.value = '';
-          renderListItems();
-        });
+        let items = doc.exists ? (doc.data().items || []) : [];
+        items.push(text);
+        docRef.set({ items }).then(() => { input.value = ''; });
       });
     }
 
-    function removeDynamicItem(index) {
+    function removeDynamicItem(idx) {
+      if (!currentActiveListTab) return;
       const docRef = db.collection('liste').doc(currentActiveListTab);
       docRef.get().then(doc => {
         if (doc.exists) {
-          let existing = doc.data().items || [];
-          existing.splice(index, 1);
-          docRef.set({ items: existing }).then(() => renderListItems());
+          let items = doc.data().items || [];
+          items.splice(idx, 1);
+          docRef.set({ items });
         }
       });
     }
 
-    function closeDynamicListModal() {
-      document.getElementById('dynamic-list-modal').classList.replace('flex', 'hidden');
-      currentActiveListTab = null;
-    }
-
-    // COINQUILINI
-    db.collection('coinquilini').onSnapshot(snapshot => {
-      const roommatesList = document.getElementById('roommates-list');
-      roommatesList.innerHTML = '';
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const card = document.createElement('div');
-        card.className = `flex items-center gap-1.5 ${data.inHouse ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-100 border-slate-200 opacity-50'} border px-3 py-1.5 rounded-full cursor-pointer`;
-        card.innerHTML = `<span class="text-lg">${data.emoji || '🐗'}</span><span class="text-xs font-bold">${data.name}</span>`;
-        card.onclick = () => db.collection('coinquilini').doc(doc.id).update({ inHouse: !data.inHouse });
-        roommatesList.appendChild(card);
-      });
-    });
-
-    function addRoommate() {
-      const input = document.getElementById('roommate-name');
-      if (!input.value.trim()) return;
-      db.collection('coinquilini').add({ name: input.value.trim(), emoji: '🐗', inHouse: true });
-      input.value = '';
-      closeAvatarModal();
-    }
-
-    // UTILS MODALI
-    function openCustomTabModal() { 
-      document.getElementById('editing-tab-id').value = '';
-      document.getElementById('modal-tab-title').innerText = "➕ Tab Personalizzato";
-      document.getElementById('type-select-container').classList.remove('hidden');
-      document.getElementById('custom-tab-modal').classList.replace('hidden', 'flex'); 
-    }
-    function closeCustomTabModal() { document.getElementById('custom-tab-modal').classList.replace('flex', 'hidden'); }
+    // 8. GESTIONE COINQUILINI
     function openAvatarModal() { document.getElementById('avatar-modal').classList.replace('hidden', 'flex'); }
     function closeAvatarModal() { document.getElementById('avatar-modal').classList.replace('flex', 'hidden'); }
-    function openAddEventModal() { document.getElementById('event-modal').classList.replace('hidden', 'flex'); }
-    function closeEventModal() { document.getElementById('event-modal').classList.replace('flex', 'hidden'); }
-    function toggleSubtasksInput() {
-      const type = document.getElementById('tab-type').value;
-      if (type === 'subtasks') document.getElementById('subtasks-input-container').classList.remove('hidden');
-      else document.getElementById('subtasks-input-container').classList.add('hidden');
+
+    function addRoommate() {
+      const name = document.getElementById('roommate-name').value.trim();
+      if (!name) return;
+
+      db.collection('casa').doc('stati').get().then(doc => {
+        let roommates = doc.exists ? (doc.data().roommates || []) : [];
+        roommates.push(name);
+        db.collection('casa').doc('stati').update({ roommates }).then(() => {
+          document.getElementById('roommate-name').value = '';
+          closeAvatarModal();
+        });
+      });
     }
-    function selectIcon(el, icon) {
-      document.querySelectorAll('#icon-picker span').forEach(s => s.classList.replace('border-indigo-500', 'border-transparent'));
-      el.classList.replace('border-transparent', 'border-indigo-500');
-      selectedIconClass = icon;
+
+    db.collection('casa').doc('stati').onSnapshot(doc => {
+      const roommatesList = document.getElementById('roommates-list');
+      if (doc.exists && doc.data().roommates) {
+        roommatesList.innerHTML = doc.data().roommates.map((r, idx) => `
+          <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+            👤 ${r}
+            <button onclick="removeRoommate(${idx})" class="text-indigo-400 hover:text-rose-500 ml-1">×</button>
+          </span>
+        `).join('');
+      } else {
+        roommatesList.innerHTML = `<p class="text-xs text-slate-400 italic">Nessun coinquilino salvato.</p>`;
+      }
+    });
+
+    function removeRoommate(index) {
+      db.collection('casa').doc('stati').get().then(doc => {
+        if (doc.exists) {
+          let roommates = doc.data().roommates || [];
+          roommates.splice(index, 1);
+          db.collection('casa').doc('stati').update({ roommates });
+        }
+      });
     }
   </script>
 </body>
