@@ -2,865 +2,310 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Casa Cinghiala</title>
-  
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#4f46e5">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casa Cinghiala - Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #1a1a24;
+      color: #f3f4f6;
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #2d2d3d;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      color: #f59e0b;
+      margin-bottom: 5px;
+    }
+
+    header p {
+      color: #9ca3af;
+    }
+
+    .section {
+      background: #242433;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .section-title {
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #e5e7eb;
+    }
+
+    /* --- SEZIONE CANCELLO --- */
+    .gate-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1a1a24;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #374151;
+    }
+
+    .gate-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .gate-status-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+    }
+
+    .gate-status-badge.open {
+      background-color: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border: 1px solid #22c55e;
+    }
+
+    .gate-status-badge.closed {
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid #ef4444;
+    }
+
+    .gate-btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .gate-btn.open-action {
+      background-color: #22c55e;
+      color: #000;
+    }
+
+    .gate-btn.open-action:hover {
+      background-color: #16a34a;
+    }
+
+    .gate-btn.close-action {
+      background-color: #ef4444;
+      color: #fff;
+    }
+
+    .gate-btn.close-action:hover {
+      background-color: #dc2626;
+    }
+
+    /* --- SEZIONE INQUILINI CON AVATAR --- */
+    .tenants-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .tenant-card {
+      background: #1a1a24;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid #2d2d3d;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .tenant-card:hover {
+      transform: translateY(-2px);
+      border-color: #f59e0b;
+    }
+
+    .avatar-wrapper {
+      position: relative;
+    }
+
+    .avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      object-fit: cover;
+      background-color: #374151;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #f59e0b;
+      border: 2px solid #4b5563;
+    }
+
+    .status-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      border: 2px solid #1a1a24;
+    }
+
+    .status-dot.online { background-color: #22c55e; }
+    .status-dot.offline { background-color: #6b7280; }
+
+    .tenant-info h4 {
+      font-size: 1rem;
+      color: #f9fafb;
+      margin-bottom: 2px;
+    }
+
+    .tenant-info p {
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+  </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 font-sans pb-24 select-none">
+<body>
 
-  <!-- Banner Errore -->
-  <div id="error-banner" class="hidden max-w-md mx-auto mb-4 bg-rose-500 text-white p-3 rounded-xl text-xs font-bold text-center shadow-lg"></div>
+  <header>
+    <h1>🐗 Casa Cinghiala</h1>
+    <p>Pannello di Controllo e Gestione Domotica</p>
+  </header>
 
-  <div class="max-w-md mx-auto space-y-6">
-    
-    <!-- HEADER CON PULSANTE CANCELLO INTELLIGENTE -->
-    <header class="text-center py-2 px-2 flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-slate-200/80">
-      <div class="text-left">
-        <h1 class="text-xl font-black text-slate-800 tracking-tight leading-tight">
-          🐗 Casa Cinghiala
-        </h1>
-        <p class="text-[9px] font-bold text-indigo-600 uppercase tracking-wider">
-          Sacro Capriolo Pistolero 🦌
-        </p>
-      </div>
-
-      <!-- BOTTONE STATO CANCELLO PPP -->
-      <button id="gate-toggle-btn" onclick="toggleGate()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all">
-        <i id="gate-btn-icon" class="fa-solid fa-door-closed text-sm"></i>
-        <span id="gate-btn-text">Cancello ...</span>
-      </button>
-    </header>
-
-    <!-- PAGINA HOME -->
-    <main id="page-home" class="space-y-6">
-      <!-- CHI C'È A CASA -->
-      <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
-        <div class="flex justify-between items-center">
-          <h2 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-            <i class="fa-solid fa-users text-indigo-500"></i> Chi c'è a casa?
-          </h2>
-          <button onclick="openAvatarModal()" class="text-xs text-indigo-600 font-bold hover:underline bg-indigo-50 px-2 py-1 rounded-lg">
-            + Aggiungi
-          </button>
-        </div>
-        <div id="roommates-list" class="flex flex-wrap gap-2 min-h-[40px] items-center">
-          <p class="text-xs text-slate-400 italic">Caricamento...</p>
-        </div>
-      </section>
-
-      <!-- GRIGLIA PULSANTI DINAMICI -->
-      <div id="status-grid" class="grid grid-cols-2 gap-3"></div>
-
-      <!-- BOTTONE AGGIUNGI NUOVO TAB -->
-      <button onclick="openCustomTabModal(false)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
-        <i class="fa-solid fa-plus-circle text-lg"></i> Aggiungi Tab Personalizzato
-      </button>
-    </main>
-
-    <!-- PAGINA CALENDARIO -->
-    <main id="page-calendar" class="space-y-4 hidden">
-      <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
-        <div class="flex justify-between items-center">
-          <h2 class="font-bold text-slate-700 text-base flex items-center gap-2">
-            <i class="fa-solid fa-calendar-days text-indigo-500"></i> Calendario Casa
-          </h2>
-          <span id="calendar-month-year" class="text-xs font-bold text-slate-500"></span>
-        </div>
-
-        <!-- Griglia Giorni -->
-        <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-400 border-b pb-2">
-          <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
-        </div>
-        <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 text-center"></div>
-      </section>
-
-      <!-- Eventi Selezionati del Giorno -->
-      <section id="day-details-section" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
-        <h3 id="selected-date-title" class="font-bold text-slate-800 text-sm">Seleziona un giorno</h3>
-        <div id="day-events-list" class="space-y-2 text-xs">
-          <p class="text-slate-400 italic">Nessun evento programmato.</p>
-        </div>
-        <button onclick="openAddEventModal()" class="w-full bg-indigo-50 text-indigo-600 font-bold py-2 rounded-xl text-xs hover:bg-indigo-100 transition-all font-semibold">
-          + Aggiungi Ospite o Vacanza
-        </button>
-      </section>
-    </main>
-
-  </div>
-
-  <!-- NAVBAR IN BASSO -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-2 flex justify-around items-center z-40 shadow-lg">
-    <button id="nav-home-btn" onclick="switchTab('home')" class="flex flex-col items-center text-indigo-600 font-bold text-xs">
-      <i class="fa-solid fa-house text-lg"></i>
-      <span>Home</span>
-    </button>
-    <button id="nav-calendar-btn" onclick="switchTab('calendar')" class="flex flex-col items-center text-slate-400 font-bold text-xs">
-      <i class="fa-solid fa-calendar-days text-lg"></i>
-      <span>Calendario</span>
-    </button>
-  </nav>
-
-  <!-- MODALE CREA / MODIFICA TAB -->
-  <div id="custom-tab-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h2 id="modal-tab-title" class="text-lg font-bold text-slate-800">➕ Tab Personalizzato</h2>
-        <button onclick="closeCustomTabModal()" class="text-slate-400 hover:text-slate-600 p-1">
-          <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
-      </div>
-      <div class="space-y-3">
-        <input type="hidden" id="editing-tab-id">
+  <!-- SEZIONE CANCELLO -->
+  <div class="section">
+    <h2 class="section-title">🚧 Controllo Cancello</h2>
+    <div class="gate-card">
+      <div class="gate-info">
+        <span style="font-size: 2rem;" id="gateEmoji">🔒</span>
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Nome Scheda</label>
-          <input type="text" id="tab-name" placeholder="Es. Gatti, Piante, Auto..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-        
-        <div id="type-select-container">
-          <label class="block text-xs font-bold text-slate-600 mb-1">Tipo di Scheda</label>
-          <select id="tab-type" onchange="toggleSubtasksInput()" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="status">Pulsante Stato (Tutto OK / Da Fare / In Corso)</option>
-            <option value="list">Lista Cose da Fare (Tipo Spesa)</option>
-            <option value="subtasks">Divisione in Sotto-Turni (Tipo Pulizie)</option>
-          </select>
-        </div>
-
-        <!-- Option Auto Reset -->
-        <div class="pt-2 border-t">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" id="tab-auto-reset" onchange="toggleResetTimeInput()" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
-            <span class="text-xs font-bold text-slate-700">Reset automatico giornaliero</span>
-          </label>
-          <div id="reset-time-container" class="hidden mt-2">
-            <label class="block text-[11px] font-bold text-slate-500 mb-1">Orario di Reset</label>
-            <input type="time" id="tab-reset-time" value="04:00" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          </div>
-        </div>
-
-        <!-- Input Sotto-Turni -->
-        <div id="subtasks-input-container" class="hidden">
-          <label class="block text-xs font-bold text-slate-600 mb-1">Sotto-Turni (Separati da virgola)</label>
-          <input type="text" id="tab-subtasks" placeholder="Es. Cibo, Lettiera, Acqua" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Scegli Icona</label>
-          <div id="icon-picker" class="grid grid-cols-5 gap-2 text-xl p-2 border border-slate-200 rounded-xl max-h-40 overflow-y-auto">
-            <span onclick="selectIcon(this, 'fa-cat')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-indigo-500"><i class="fa-solid fa-cat"></i></span>
-            <span onclick="selectIcon(this, 'fa-dog')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-dog"></i></span>
-            <span onclick="selectIcon(this, 'fa-paw')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-paw"></i></span>
-            <span onclick="selectIcon(this, 'fa-plant-wilt')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-plant-wilt"></i></span>
-            <span onclick="selectIcon(this, 'fa-car')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-car"></i></span>
-            <span onclick="selectIcon(this, 'fa-wrench')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-wrench"></i></span>
-            <span onclick="selectIcon(this, 'fa-utensils')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-utensils"></i></span>
-            <span onclick="selectIcon(this, 'fa-star')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-star"></i></span>
-            <span onclick="selectIcon(this, 'fa-gamepad')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-gamepad"></i></span>
-            <span onclick="selectIcon(this, 'fa-umbrella-beach')" class="cursor-pointer p-2 text-center rounded-lg hover:bg-slate-100 border-2 border-transparent"><i class="fa-solid fa-umbrella-beach"></i></span>
-          </div>
-        </div>
-
-        <div class="space-y-2 pt-2">
-          <button onclick="saveCustomTab()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-emerald-700">Salva Scheda</button>
-          <button id="delete-tab-btn" onclick="deleteTab()" class="w-full bg-rose-50 text-rose-600 border border-rose-200 py-2 rounded-xl text-xs font-bold hover:bg-rose-100 hidden">🗑️ Elimina Scheda</button>
+          <h3>Stato Cancello</h3>
+          <span id="gateBadge" class="gate-status-badge closed">Chiuso</span>
         </div>
       </div>
+      <button id="gateToggleBtn" class="gate-btn open-action">Apri Cancello</button>
     </div>
   </div>
 
-  <!-- MODALE EVENTO CALENDARIO MULTI-GIORNO -->
-  <div id="event-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h2 class="text-lg font-bold text-slate-800">📅 Aggiungi Evento</h2>
-        <button onclick="closeEventModal()" class="text-slate-400 hover:text-slate-600 p-1">
-          <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
-      </div>
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Tipo Evento</label>
-          <select id="event-type" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="ospite">👤 Ospite in Visita</option>
-            <option value="vacanza">🏖️ Vacanza / Ferie</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Nome / Descrizione</label>
-          <input type="text" id="event-title" placeholder="Es. Marco & Sara / Mare a Gallipoli" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Data Inizio</label>
-            <input type="date" id="event-start-date" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Data Fine</label>
-            <input type="date" id="event-end-date" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          </div>
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Emoji / Avatar</label>
-          <input type="text" id="event-emoji" value="👋" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-xl">
-        </div>
-        <button onclick="saveCalendarEvent()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-indigo-700">Salva Evento</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODALE SOTTO-TURNI DINAMICI -->
-  <div id="dynamic-subtasks-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b pb-2">
-        <div>
-          <h2 id="dynamic-subtasks-title" class="text-lg font-bold text-slate-800">🧹 Turni</h2>
-          <p class="text-[11px] text-slate-500">Tocca ogni turno per cambiarne lo stato</p>
-        </div>
-        <button onclick="closeDynamicSubtasksModal()" class="text-slate-400 hover:text-slate-600 p-1">
-          <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
-      </div>
-      <div id="dynamic-subtasks-container" class="space-y-2"></div>
-    </div>
-  </div>
-
-  <!-- MODALE LISTE DINAMICHE -->
-  <div id="dynamic-list-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h2 id="dynamic-list-title" class="text-lg font-bold text-slate-800">📋 Lista</h2>
-        <button onclick="closeDynamicListModal()" class="text-slate-400 hover:text-slate-600 p-1">
-          <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
-      </div>
-      <div class="flex gap-2">
-        <input type="text" id="dynamic-item-input" placeholder="Aggiungi elemento..." class="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <button onclick="addDynamicItem()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold active:bg-indigo-700">Aggiungi</button>
-      </div>
-      <ul id="dynamic-list-items" class="space-y-2 max-h-60 overflow-y-auto"></ul>
-    </div>
-  </div>
-
-  <!-- MODALE COINQUILINO -->
-  <div id="avatar-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h2 class="text-lg font-bold text-slate-800">👤 Aggiungi Coinquilino</h2>
-        <button onclick="closeAvatarModal()" class="text-slate-400 hover:text-slate-600 p-1">
-          <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
-      </div>
-      <div class="space-y-3">
-        <input type="text" id="roommate-name" placeholder="Nome" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <button onclick="addRoommate()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold active:bg-indigo-700">Salva Coinquilino</button>
-      </div>
+  <!-- SEZIONE INQUILINI CON AVATAR -->
+  <div class="section">
+    <h2 class="section-title">👥 Inquilini della Casa</h2>
+    <div class="tenants-grid" id="tenantsGrid">
+      <!-- Gli inquilini verranno caricati via JavaScript -->
     </div>
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDC6wlqz4ARaREum8gXiklq1GvyF1JdpgQ",
-      authDomain: "casa-cinghiala.firebaseapp.com",
-      projectId: "casa-cinghiala",
-      storageBucket: "casa-cinghiala.firebasestorage.app",
-      messagingSenderId: "274673117994",
-      appId: "1:274673117994:web:a2d31710afdc0c2dd14c53"
-    };
+    /* --- GESTIONE CANCELLO (Sincronizzazione localStorage) --- */
+    const gateBadge = document.getElementById('gateBadge');
+    const gateEmoji = document.getElementById('gateEmoji');
+    const gateToggleBtn = document.getElementById('gateToggleBtn');
 
-    function showError(msg) {
-      const banner = document.getElementById('error-banner');
-      banner.innerText = msg;
-      banner.classList.remove('hidden');
-    }
-
-    try { firebase.initializeApp(firebaseConfig); } catch (e) { showError("Errore Init: " + e.message); }
-    const db = firebase.firestore();
-
-    const states = [
-      { color: 'bg-emerald-500', text: 'Tutto OK' },
-      { color: 'bg-rose-500', text: 'Da Fare' },
-      { color: 'bg-amber-500', text: 'In Corso' }
-    ];
-
-    const defaultTabs = [
-      { id: 'spesa', name: 'Spesa', icon: 'fa-cart-shopping', type: 'list' },
-      { id: 'monnezza', name: 'Monnezza', icon: 'fa-trash-can', type: 'status' },
-      { id: 'orto', name: 'Orto', icon: 'fa-seedling', type: 'status' },
-      { id: 'pulizie', name: 'Pulizie', icon: 'fa-broom', type: 'subtasks', subtasks: ['Pavimenti', 'Cucina', 'Bagni', 'Balcone', 'Salone'] }
-    ];
-
-    let currentStatusData = {};
-    let customTabsList = [];
-    let hiddenTabsList = [];
-    let currentActiveListTab = null;
-    let currentActiveSubtasksTab = null;
-    let selectedDateStr = new Date().toISOString().split('T')[0];
-    let selectedIconClass = 'fa-cat';
-
-    // 1. GESTIONE INTERRUTTORE CANCELLO
-    function toggleGate() {
-      const isCurrentlyOpen = currentStatusData.gateOpen || false;
-      db.collection('casa').doc('stati').update({ gateOpen: !isCurrentlyOpen });
-    }
-
-    function updateGateButtonUI(isOpen) {
-      const btn = document.getElementById('gate-toggle-btn');
-      const icon = document.getElementById('gate-btn-icon');
-      const text = document.getElementById('gate-btn-text');
-
+    function syncGateUI(isOpen) {
       if (isOpen) {
-        btn.className = "bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all";
-        icon.className = "fa-solid fa-door-open text-sm";
-        text.innerText = "Aperto 🔓";
+        gateBadge.textContent = 'Aperto';
+        gateBadge.className = 'gate-status-badge open';
+        gateEmoji.textContent = '🔓';
+        gateToggleBtn.textContent = 'Chiudi Cancello';
+        gateToggleBtn.className = 'gate-btn close-action';
       } else {
-        btn.className = "bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all";
-        icon.className = "fa-solid fa-door-closed text-sm";
-        text.innerText = "Chiuso 🔒";
+        gateBadge.textContent = 'Chiuso';
+        gateBadge.className = 'gate-status-badge closed';
+        gateEmoji.textContent = '🔒';
+        gateToggleBtn.textContent = 'Apri Cancello';
+        gateToggleBtn.className = 'gate-btn open-action';
       }
     }
 
-    // 2. NAVIGAZIONE TAB (Home / Calendario)
-    function switchTab(page) {
-      if(page === 'home') {
-        document.getElementById('page-home').classList.remove('hidden');
-        document.getElementById('page-calendar').classList.add('hidden');
-        document.getElementById('nav-home-btn').className = "flex flex-col items-center text-indigo-600 font-bold text-xs";
-        document.getElementById('nav-calendar-btn').className = "flex flex-col items-center text-slate-400 font-bold text-xs";
-      } else {
-        document.getElementById('page-home').classList.add('hidden');
-        document.getElementById('page-calendar').classList.remove('hidden');
-        document.getElementById('nav-home-btn').className = "flex flex-col items-center text-slate-400 font-bold text-xs";
-        document.getElementById('nav-calendar-btn').className = "flex flex-col items-center text-indigo-600 font-bold text-xs";
-        renderCalendar();
-      }
-    }
-
-    // 3. ASCOLTO STATI IN TEMPO REALE E LOGICA RESET
-    db.collection('casa').doc('stati').onSnapshot(doc => {
-      if (doc.exists) {
-        currentStatusData = doc.data();
-        customTabsList = currentStatusData.customTabs || [];
-        hiddenTabsList = currentStatusData.hiddenTabs || [];
-        
-        updateGateButtonUI(currentStatusData.gateOpen || false);
-        checkAutoReset();
-        renderGrid();
-        
-        if (currentActiveSubtasksTab) renderSubtasksModal();
-      } else {
-        db.collection('casa').doc('stati').set({ spesa: 0, monnezza: 0, orto: 0, pulizie: 0, gateOpen: false, customTabs: [], hiddenTabs: [] });
-      }
-    });
-
-    // CONTROLLO RESET AUTOMATICO
-    function checkAutoReset() {
-      const now = new Date();
-      const todayStr = now.toISOString().split('T')[0];
-      const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    function toggleGate() {
+      const currentState = localStorage.getItem('cancello_casa_cinghiala');
+      const newState = (currentState === 'aperto') ? 'chiuso' : 'aperto';
       
-      const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
-      const allTabs = [...visibleDefaults, ...customTabsList];
-      let updates = {};
-      let resetOccurred = false;
-
-      allTabs.forEach(tab => {
-        if (tab.autoReset && tab.resetTime) {
-          const lastReset = currentStatusData[`lastReset_${tab.id}`] || "";
-          if (currentTimeStr >= tab.resetTime && lastReset !== todayStr) {
-            updates[tab.id] = 0;
-            updates[`lastReset_${tab.id}`] = todayStr;
-            resetOccurred = true;
-          }
-        }
-      });
-
-      if (resetOccurred) {
-        db.collection('casa').doc('stati').update(updates);
-      }
+      // Salva lo stato in localStorage (sincronizza con amici.html)
+      localStorage.setItem('cancello_casa_cinghiala', newState);
+      syncGateUI(newState === 'aperto');
     }
 
-    function renderGrid() {
-      const grid = document.getElementById('status-grid');
+    gateToggleBtn.addEventListener('click', toggleGate);
+
+    // Inizializzazione stato cancello
+    const savedStatus = localStorage.getItem('cancello_casa_cinghiala') || 'chiuso';
+    syncGateUI(savedStatus === 'aperto');
+
+
+    /* --- GESTIONE INQUILINI E AVATAR --- */
+    const inquilini = [
+      {
+        nome: "Marco",
+        ruolo: "Stanza 1",
+        avatar: "https://i.pravatar.cc/150?img=11", // URL immagine avatar
+        online: true
+      },
+      {
+        nome: "Giulia",
+        ruolo: "Stanza 2",
+        avatar: "https://i.pravatar.cc/150?img=5",
+        online: true
+      },
+      {
+        nome: "Luca",
+        ruolo: "Stanza 3",
+        avatar: "https://i.pravatar.cc/150?img=68",
+        online: false
+      },
+      {
+        nome: "Elena",
+        ruolo: "Stanza 4",
+        avatar: "https://i.pravatar.cc/150?img=47",
+        online: true
+      }
+    ];
+
+    function renderInquilini() {
+      const grid = document.getElementById('tenantsGrid');
       grid.innerHTML = '';
-      
-      const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
-      const allTabs = [...visibleDefaults, ...customTabsList];
 
-      allTabs.forEach(tab => {
-        const col = document.createElement('div');
-        col.className = 'relative';
+      inquilini.forEach(inquilino => {
+        const card = document.createElement('div');
+        card.className = 'tenant-card';
 
-        if (tab.type === 'list') {
-          const stateIdx = currentStatusData[tab.id] || 0;
-          col.innerHTML = `
-            <button onclick="changeStatus('${tab.id}')" class="w-full ${states[stateIdx].color} text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95 pb-10">
-              <i class="fa-solid ${tab.icon} text-3xl"></i>
-              <span class="font-bold text-base">${tab.name}</span>
-              <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
-            </button>
-            <button onclick="openDynamicListModal('${tab.id}', '${tab.name}')" class="absolute bottom-2 left-2 right-2 bg-black/20 active:bg-black/40 text-white text-xs font-semibold py-1 rounded-xl backdrop-blur-md transition-all flex items-center justify-center gap-1">
-              <i class="fa-solid fa-list-check"></i> Apri Lista
-            </button>
-            <button onclick="openCustomTabModal('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
-          `;
-        } else if (tab.type === 'subtasks') {
-          const subData = currentStatusData[`sub_${tab.id}`] || {};
-          const subList = tab.subtasks || [];
-          let doneCount = 0;
-          subList.forEach((s, idx) => { if ((subData[idx] || 0) === 0) doneCount++; });
-
-          col.innerHTML = `
-            <button onclick="openDynamicSubtasksModal('${tab.id}', '${tab.name}')" class="w-full bg-violet-600 text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
-              <i class="fa-solid ${tab.icon} text-3xl"></i>
-              <span class="font-bold text-base">${tab.name}</span>
-              <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${doneCount}/${subList.length} Fatti</span>
-            </button>
-            <button onclick="openCustomTabModal('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
-          `;
-        } else {
-          const stateIdx = currentStatusData[tab.id] || 0;
-          col.innerHTML = `
-            <button onclick="changeStatus('${tab.id}')" class="w-full ${states[stateIdx].color} text-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2 transition-all active:scale-95">
-              <i class="fa-solid ${tab.icon} text-3xl"></i>
-              <span class="font-bold text-base">${tab.name}</span>
-              <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
-            </button>
-            <button onclick="openCustomTabModal('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
-          `;
-        }
-        grid.appendChild(col);
-      });
-    }
-
-    function changeStatus(key) {
-      const nextIdx = ((currentStatusData[key] || 0) + 1) % states.length;
-      db.collection('casa').doc('stati').update({ [key]: nextIdx });
-    }
-
-    // 4. CREA / MODIFICA / ELIMINA TAB
-    function openCustomTabModal(tabId = false) {
-      const modal = document.getElementById('custom-tab-modal');
-      const title = document.getElementById('modal-tab-title');
-      const deleteBtn = document.getElementById('delete-tab-btn');
-      
-      if (tabId) {
-        const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
-        const allTabs = [...visibleDefaults, ...customTabsList];
-        const tab = allTabs.find(t => t.id === tabId);
-        if (!tab) return;
-
-        title.innerText = "✏️ Modifica Tab";
-        document.getElementById('editing-tab-id').value = tab.id;
-        document.getElementById('tab-name').value = tab.name;
-        document.getElementById('tab-type').value = tab.type;
-        document.getElementById('type-select-container').classList.add('hidden');
-
-        document.getElementById('tab-auto-reset').checked = tab.autoReset || false;
-        document.getElementById('tab-reset-time').value = tab.resetTime || "04:00";
-        toggleResetTimeInput();
-
-        if (tab.type === 'subtasks') {
-          document.getElementById('subtasks-input-container').classList.remove('hidden');
-          document.getElementById('tab-subtasks').value = (tab.subtasks || []).join(', ');
-        } else {
-          document.getElementById('subtasks-input-container').classList.add('hidden');
-        }
-
-        deleteBtn.classList.remove('hidden');
-      } else {
-        title.innerText = "➕ Tab Personalizzato";
-        document.getElementById('editing-tab-id').value = "";
-        document.getElementById('tab-name').value = "";
-        document.getElementById('type-select-container').classList.remove('hidden');
-        document.getElementById('tab-auto-reset').checked = false;
-        toggleResetTimeInput();
-        toggleSubtasksInput();
-        deleteBtn.classList.add('hidden');
-      }
-
-      modal.classList.replace('hidden', 'flex');
-    }
-
-    function closeCustomTabModal() {
-      document.getElementById('custom-tab-modal').classList.replace('flex', 'hidden');
-    }
-
-    function deleteTab() {
-      const editingId = document.getElementById('editing-tab-id').value;
-      if (!editingId) return;
-
-      if (!confirm("Sei sicuro di voler eliminare questa scheda?")) return;
-
-      const isDefault = defaultTabs.some(t => t.id === editingId);
-
-      if (isDefault) {
-        let hidden = [...hiddenTabsList];
-        if (!hidden.includes(editingId)) hidden.push(editingId);
-        db.collection('casa').doc('stati').update({ hiddenTabs: hidden }).then(() => {
-          closeCustomTabModal();
-        });
-      } else {
-        let updatedCustoms = customTabsList.filter(t => t.id !== editingId);
-        db.collection('casa').doc('stati').update({ customTabs: updatedCustoms }).then(() => {
-          closeCustomTabModal();
-        });
-      }
-    }
-
-    function toggleSubtasksInput() {
-      const type = document.getElementById('tab-type').value;
-      const subContainer = document.getElementById('subtasks-input-container');
-      if (type === 'subtasks') subContainer.classList.remove('hidden');
-      else subContainer.classList.add('hidden');
-    }
-
-    function toggleResetTimeInput() {
-      const checked = document.getElementById('tab-auto-reset').checked;
-      const container = document.getElementById('reset-time-container');
-      if (checked) container.classList.remove('hidden');
-      else container.classList.add('hidden');
-    }
-
-    function selectIcon(element, iconName) {
-      selectedIconClass = iconName;
-      document.querySelectorAll('#icon-picker span').forEach(el => el.classList.replace('border-indigo-500', 'border-transparent'));
-      element.classList.replace('border-transparent', 'border-indigo-500');
-    }
-
-    function saveCustomTab() {
-      const editingId = document.getElementById('editing-tab-id').value;
-      const name = document.getElementById('tab-name').value.trim();
-      const type = document.getElementById('tab-type').value;
-      const autoReset = document.getElementById('tab-auto-reset').checked;
-      const resetTime = document.getElementById('tab-reset-time').value;
-
-      if (!name) return;
-
-      let currentCustoms = [...customTabsList];
-      const isDefault = defaultTabs.some(t => t.id === editingId);
-
-      if (editingId) {
-        if (!isDefault) {
-          let idx = currentCustoms.findIndex(t => t.id === editingId);
-          if (idx !== -1) {
-            currentCustoms[idx].name = name;
-            currentCustoms[idx].icon = selectedIconClass;
-            currentCustoms[idx].autoReset = autoReset;
-            currentCustoms[idx].resetTime = resetTime;
-            if (currentCustoms[idx].type === 'subtasks') {
-              const subInput = document.getElementById('tab-subtasks').value;
-              currentCustoms[idx].subtasks = subInput ? subInput.split(',').map(s => s.trim()).filter(s => s) : [];
-            }
-          }
-        }
-      } else {
-        const newId = 'tab_' + Date.now();
-        let newTabObj = { 
-          id: newId, 
-          name: name, 
-          icon: selectedIconClass, 
-          type: type,
-          autoReset: autoReset,
-          resetTime: resetTime
-        };
-        if (type === 'subtasks') {
-          const subInput = document.getElementById('tab-subtasks').value;
-          newTabObj.subtasks = subInput ? subInput.split(',').map(s => s.trim()).filter(s => s) : ['Incarico 1'];
-        }
-        currentCustoms.push(newTabObj);
-      }
-
-      db.collection('casa').doc('stati').update({ customTabs: currentCustoms }).then(() => {
-        closeCustomTabModal();
-      });
-    }
-
-    // 5. CALENDARIO CON EVENTI MULTI-GIORNO
-    let currentMonth = new Date().getMonth();
-    let currentYear = new Date().getFullYear();
-
-    function renderCalendar() {
-      const daysGrid = document.getElementById('calendar-days-grid');
-      daysGrid.innerHTML = '';
-      const date = new Date(currentYear, currentMonth, 1);
-      
-      const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-      document.getElementById('calendar-month-year').innerText = `${monthNames[currentMonth]} ${currentYear}`;
-
-      let firstDayIndex = date.getDay() - 1;
-      if (firstDayIndex === -1) firstDayIndex = 6;
-
-      const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-      db.collection('calendario').onSnapshot(snapshot => {
-        let events = {};
-        snapshot.forEach(doc => { events[doc.id] = doc.data().items || []; });
-
-        daysGrid.innerHTML = '';
-        for (let x = 0; x < firstDayIndex; x++) daysGrid.innerHTML += `<div></div>`;
-
-        for (let day = 1; day <= lastDay; day++) {
-          const dayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const dayEvents = events[dayStr] || [];
-          const isSelected = dayStr === selectedDateStr;
-
-          const dayEl = document.createElement('div');
-          dayEl.className = `p-2 rounded-xl text-xs font-bold flex flex-col items-center justify-between cursor-pointer border ${isSelected ? 'border-indigo-600 bg-indigo-50' : 'border-slate-100 bg-slate-50'}`;
-          dayEl.onclick = () => selectCalendarDate(dayStr);
-          
-          let dots = dayEvents.map(e => e.emoji).join('');
-          dayEl.innerHTML = `<span>${day}</span><span class="text-[10px] mt-1 overflow-hidden h-4">${dots}</span>`;
-          daysGrid.appendChild(dayEl);
-        }
-        loadDayEvents(selectedDateStr, events[selectedDateStr] || []);
-      });
-    }
-
-    function selectCalendarDate(dateStr) {
-      selectedDateStr = dateStr;
-      renderCalendar();
-    }
-
-    function loadDayEvents(dateStr, dayEvents) {
-      document.getElementById('selected-date-title').innerText = `Eventi del ${dateStr}`;
-      const list = document.getElementById('day-events-list');
-      list.innerHTML = '';
-
-      if (dayEvents.length === 0) {
-        list.innerHTML = `<p class="text-slate-400 italic">Nessun evento registrato per questa data.</p>`;
-        return;
-      }
-
-      dayEvents.forEach((ev, idx) => {
-        const item = document.createElement('div');
-        item.className = "flex justify-between items-center p-2 rounded-xl bg-slate-50 border border-slate-200";
-        item.innerHTML = `
-          <div class="flex items-center gap-2">
-            <span class="text-base">${ev.emoji}</span>
-            <span class="font-bold text-slate-700">${ev.title}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-full ${ev.type === 'vacanza' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">${ev.type}</span>
+        card.innerHTML = `
+          <div class="avatar-wrapper">
+            <img class="avatar" src="${inquilino.avatar}" alt="${inquilino.nome}">
+            <span class="status-dot ${inquilino.online ? 'online' : 'offline'}"></span>
           </div>
-          <button onclick="deleteCalendarEvent('${dateStr}', ${idx})" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-trash"></i></button>
+          <div class="tenant-info">
+            <h4>${inquilino.nome}</h4>
+            <p>${inquilino.ruolo}</p>
+          </div>
         `;
-        list.appendChild(item);
+
+        grid.appendChild(card);
       });
     }
 
-    function openAddEventModal() {
-      document.getElementById('event-start-date').value = selectedDateStr;
-      document.getElementById('event-end-date').value = selectedDateStr;
-      document.getElementById('event-modal').classList.replace('hidden', 'flex');
-    }
-
-    function closeEventModal() {
-      document.getElementById('event-modal').classList.replace('flex', 'hidden');
-    }
-
-    function saveCalendarEvent() {
-      const type = document.getElementById('event-type').value;
-      const title = document.getElementById('event-title').value.trim();
-      const emoji = document.getElementById('event-emoji').value.trim() || '📅';
-      const startDateStr = document.getElementById('event-start-date').value;
-      const endDateStr = document.getElementById('event-end-date').value;
-
-      if (!title || !startDateStr || !endDateStr) return;
-
-      let start = new Date(startDateStr);
-      let end = new Date(endDateStr);
-
-      if (start > end) {
-        showError("La data di inizio non può essere successiva alla data di fine.");
-        return;
-      }
-
-      let promises = [];
-      let current = new Date(start);
-
-      while (current <= end) {
-        const dateStr = current.toISOString().split('T')[0];
-        const docRef = db.collection('calendario').doc(dateStr);
-
-        const p = docRef.get().then(doc => {
-          let existing = doc.exists ? (doc.data().items || []) : [];
-          existing.push({ type, title, emoji });
-          return docRef.set({ items: existing });
-        });
-
-        promises.push(p);
-        current.setDate(current.getDate() + 1);
-      }
-
-      Promise.all(promises).then(() => {
-        closeEventModal();
-        renderCalendar();
-      });
-    }
-
-    function deleteCalendarEvent(dateStr, index) {
-      const docRef = db.collection('calendario').doc(dateStr);
-      docRef.get().then(doc => {
-        if (doc.exists) {
-          let existing = doc.data().items || [];
-          existing.splice(index, 1);
-          docRef.set({ items: existing });
-        }
-      });
-    }
-
-    // 6. SOTTO-TURNI
-    function openDynamicSubtasksModal(tabId, tabName) {
-      currentActiveSubtasksTab = tabId;
-      document.getElementById('dynamic-subtasks-title').innerText = "🧹 " + tabName;
-      renderSubtasksModal();
-      document.getElementById('dynamic-subtasks-modal').classList.replace('hidden', 'flex');
-    }
-
-    function renderSubtasksModal() {
-      if (!currentActiveSubtasksTab) return;
-      const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
-      const allTabs = [...visibleDefaults, ...customTabsList];
-      const tab = allTabs.find(t => t.id === currentActiveSubtasksTab);
-      if (!tab) return;
-
-      const container = document.getElementById('dynamic-subtasks-container');
-      container.innerHTML = '';
-      const subData = currentStatusData[`sub_${tab.id}`] || {};
-      const subList = tab.subtasks || [];
-
-      subList.forEach((subName, idx) => {
-        const stateIdx = subData[idx] || 0;
-        const div = document.createElement('div');
-        div.className = `flex justify-between items-center ${states[stateIdx].color} text-white p-3 rounded-xl cursor-pointer active:scale-98 transition-all`;
-        div.onclick = () => changeSubtaskState(tab.id, idx);
-        div.innerHTML = `
-          <span class="font-bold text-sm">${subName}</span>
-          <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function changeSubtaskState(tabId, subIdx) {
-      const subData = currentStatusData[`sub_${tabId}`] || {};
-      const nextIdx = ((subData[subIdx] || 0) + 1) % states.length;
-      subData[subIdx] = nextIdx;
-      db.collection('casa').doc('stati').update({ [`sub_${tabId}`]: subData });
-    }
-
-    function closeDynamicSubtasksModal() {
-      document.getElementById('dynamic-subtasks-modal').classList.replace('flex', 'hidden');
-      currentActiveSubtasksTab = null;
-    }
-
-    // 7. LISTE DINAMICHE
-    function openDynamicListModal(tabId, tabName) {
-      currentActiveListTab = tabId;
-      document.getElementById('dynamic-list-title').innerText = "📋 " + tabName;
-      renderListItems();
-      document.getElementById('dynamic-list-modal').classList.replace('hidden', 'flex');
-    }
-
-    function closeDynamicListModal() {
-      document.getElementById('dynamic-list-modal').classList.replace('flex', 'hidden');
-      currentActiveListTab = null;
-    }
-
-    function renderListItems() {
-      if (!currentActiveListTab) return;
-      const listContainer = document.getElementById('dynamic-list-items');
-      listContainer.innerHTML = '';
-
-      db.collection('liste').doc(currentActiveListTab).onSnapshot(doc => {
-        listContainer.innerHTML = '';
-        const items = doc.exists ? (doc.data().items || []) : [];
-
-        items.forEach((itemText, idx) => {
-          const li = document.createElement('li');
-          li.className = "flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700";
-          li.innerHTML = `
-            <span>${itemText}</span>
-            <button onclick="removeDynamicItem(${idx})" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-xmark"></i></button>
-          `;
-          listContainer.appendChild(li);
-        });
-      });
-    }
-
-    function addDynamicItem() {
-      const input = document.getElementById('dynamic-item-input');
-      const text = input.value.trim();
-      if (!text || !currentActiveListTab) return;
-
-      const docRef = db.collection('liste').doc(currentActiveListTab);
-      docRef.get().then(doc => {
-        let items = doc.exists ? (doc.data().items || []) : [];
-        items.push(text);
-        docRef.set({ items }).then(() => { input.value = ''; });
-      });
-    }
-
-    function removeDynamicItem(idx) {
-      if (!currentActiveListTab) return;
-      const docRef = db.collection('liste').doc(currentActiveListTab);
-      docRef.get().then(doc => {
-        if (doc.exists) {
-          let items = doc.data().items || [];
-          items.splice(idx, 1);
-          docRef.set({ items });
-        }
-      });
-    }
-
-    // 8. GESTIONE COINQUILINI
-    function openAvatarModal() { document.getElementById('avatar-modal').classList.replace('hidden', 'flex'); }
-    function closeAvatarModal() { document.getElementById('avatar-modal').classList.replace('flex', 'hidden'); }
-
-    function addRoommate() {
-      const name = document.getElementById('roommate-name').value.trim();
-      if (!name) return;
-
-      db.collection('casa').doc('stati').get().then(doc => {
-        let roommates = doc.exists ? (doc.data().roommates || []) : [];
-        roommates.push(name);
-        db.collection('casa').doc('stati').update({ roommates }).then(() => {
-          document.getElementById('roommate-name').value = '';
-          closeAvatarModal();
-        });
-      });
-    }
-
-    db.collection('casa').doc('stati').onSnapshot(doc => {
-      const roommatesList = document.getElementById('roommates-list');
-      if (doc.exists && doc.data().roommates) {
-        roommatesList.innerHTML = doc.data().roommates.map((r, idx) => `
-          <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-            👤 ${r}
-            <button onclick="removeRoommate(${idx})" class="text-indigo-400 hover:text-rose-500 ml-1">×</button>
-          </span>
-        `).join('');
-      } else {
-        roommatesList.innerHTML = `<p class="text-xs text-slate-400 italic">Nessun coinquilino salvato.</p>`;
-      }
-    });
-
-    function removeRoommate(index) {
-      db.collection('casa').doc('stati').get().then(doc => {
-        if (doc.exists) {
-          let roommates = doc.data().roommates || [];
-          roommates.splice(index, 1);
-          db.collection('casa').doc('stati').update({ roommates });
-        }
-      });
-    }
+    renderInquilini();
   </script>
 </body>
 </html>
