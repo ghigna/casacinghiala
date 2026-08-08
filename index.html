@@ -12,9 +12,40 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+  <!-- Font opzionali per personalizzazione -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Poppins:wght@400;700;900&family=Nunito:wght@400;700;900&family=Fira+Sans:wght@400;700;900&family=Roboto+Slab:wght@400;700;900&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --app-primary: #4f46e5;
+      --app-bg: #f1f5f9;
+      --app-bg-image: none;
+      --app-font: 'Inter', sans-serif;
+    }
+    body {
+      background-color: var(--app-bg) !important;
+      background-image: var(--app-bg-image);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      font-family: var(--app-font);
+    }
+    .app-accent-text { color: var(--app-primary); }
+    .app-accent-bg { background-color: var(--app-primary); }
+    .app-accent-bg:hover { filter: brightness(0.92); }
+    .app-accent-ring:focus { --tw-ring-color: var(--app-primary); border-color: var(--app-primary); }
+    .nav-btn { color: #94a3b8; }
+    .nav-btn.active { color: var(--app-primary); }
+    .reminder-badge { background: rgba(0,0,0,0.25); }
+    .reminder-badge.due { background: #fff; color: #b91c1c; animation: pulseBadge 1.4s infinite; }
+    @keyframes pulseBadge { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+  </style>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 font-sans pb-24 select-none">
 
@@ -26,19 +57,13 @@
     <!-- HEADER CON PULSANTE CANCELLO INTELLIGENTE -->
     <header class="text-center py-2 px-2 flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-slate-200/80">
       <div class="text-left">
-        <h1 class="text-xl font-black text-slate-800 tracking-tight leading-tight">
+        <h1 id="app-title" class="text-xl font-black text-slate-800 tracking-tight leading-tight">
           🐗 Casa Cinghiala
         </h1>
-        <p class="text-[9px] font-bold text-indigo-600 uppercase tracking-wider">
+        <p id="app-subtitle" class="text-[9px] font-bold app-accent-text uppercase tracking-wider">
           Sacro Capriolo Pistolero 🦌
         </p>
       </div>
-
-      <!-- BOTTONE STATO CANCELLO -->
-      <button id="gate-toggle-btn" onclick="toggleGate()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all">
-        <i id="gate-btn-icon" class="fa-solid fa-door-closed text-sm"></i>
-        <span id="gate-btn-text">Cancello ...</span>
-      </button>
     </header>
 
     <!-- PAGINA HOME -->
@@ -66,7 +91,7 @@
 
       <!-- BOTTONE AGGIUNGI NUOVO TAB -->
       <button onclick="openCustomTabModal(false)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
-        <i class="fa-solid fa-plus-circle text-lg"></i> Aggiungi Tab Personalizzato
+        <i class="fa-solid fa-plus-circle text-lg"></i> <span id="add-tab-btn-label">Aggiungi Tab Personalizzato</span>
       </button>
     </main>
 
@@ -99,17 +124,106 @@
       </section>
     </main>
 
+    <!-- PAGINA RISORSE -->
+    <main id="page-resources" class="space-y-4 hidden">
+      <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="font-bold text-slate-700 text-base flex items-center gap-2">
+            <i class="fa-solid fa-link app-accent-text"></i> Risorse
+          </h2>
+          <button onclick="openResourceModal()" class="text-xs app-accent-text font-bold hover:underline bg-slate-50 px-2.5 py-1 rounded-lg">
+            + Aggiungi
+          </button>
+        </div>
+        <p class="text-[10px] text-slate-400">Link utili per la casa: bollette, manuali, gruppi, documenti...</p>
+        <div id="resources-list" class="space-y-2">
+          <p class="text-xs text-slate-400 italic">Nessuna risorsa aggiunta.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- PAGINA MODIFICA (PERSONALIZZAZIONE) -->
+    <main id="page-settings" class="space-y-4 hidden">
+      <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+        <h2 class="font-bold text-slate-700 text-base flex items-center gap-2">
+          <i class="fa-solid fa-palette app-accent-text"></i> Personalizza l'app
+        </h2>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Colore principale</label>
+            <input type="color" id="theme-primary-color" value="#4f46e5" class="w-full h-10 rounded-xl border border-slate-300 cursor-pointer">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Colore sfondo</label>
+            <input type="color" id="theme-bg-color" value="#f1f5f9" class="w-full h-10 rounded-xl border border-slate-300 cursor-pointer">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Immagine di sfondo (URL)</label>
+          <input type="url" id="theme-bg-image" oninput="previewBgImage()" placeholder="https://esempio.com/foto.jpg" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 app-accent-ring">
+          <p class="text-[10px] text-slate-400 mt-1">Incolla il link diretto a un'immagine (es. da Imgur, Google Photos condiviso, ecc.). Il colore sfondo resta visibile nelle zone trasparenti o se il link non carica.</p>
+          <div id="bg-image-preview-wrap" class="hidden mt-2">
+            <img id="bg-image-preview" class="w-full h-28 object-cover rounded-xl border border-slate-200" src="">
+            <button type="button" onclick="clearBgImage()" class="mt-2 text-[11px] text-rose-500 font-bold hover:underline">Rimuovi immagine</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Font</label>
+          <select id="theme-font-select" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 app-accent-ring">
+            <option value="'Inter', sans-serif">Inter (default)</option>
+            <option value="'Poppins', sans-serif">Poppins</option>
+            <option value="'Nunito', sans-serif">Nunito</option>
+            <option value="'Fira Sans', sans-serif">Fira Sans</option>
+            <option value="'Roboto Slab', serif">Roboto Slab</option>
+            <option value="'Comic Neue', cursive">Comic Neue</option>
+          </select>
+        </div>
+
+        <div class="pt-2 border-t space-y-3">
+          <p class="text-xs font-bold text-slate-600">Testi dell'app</p>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">Titolo</label>
+            <input type="text" id="theme-title-input" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 app-accent-ring">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">Sottotitolo</label>
+            <input type="text" id="theme-subtitle-input" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 app-accent-ring">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 mb-1">Testo bottone "Aggiungi Tab"</label>
+            <input type="text" id="theme-addtab-input" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 app-accent-ring">
+          </div>
+        </div>
+
+        <div class="space-y-2 pt-2">
+          <button onclick="saveTheme()" class="w-full app-accent-bg text-white py-2.5 rounded-xl text-sm font-bold active:scale-95 transition-all">Salva Personalizzazione</button>
+          <button onclick="resetTheme()" class="w-full bg-slate-100 text-slate-600 py-2 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all">Ripristina Aspetto Predefinito</button>
+        </div>
+      </section>
+    </main>
+
   </div>
 
   <!-- NAVBAR IN BASSO -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-2 flex justify-around items-center z-40 shadow-lg">
-    <button id="nav-home-btn" onclick="switchTab('home')" class="flex flex-col items-center text-indigo-600 font-bold text-xs">
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-3 py-2 flex justify-around items-center z-40 shadow-lg">
+    <button id="nav-home-btn" onclick="switchTab('home')" class="nav-btn active flex flex-col items-center font-bold text-xs">
       <i class="fa-solid fa-house text-lg"></i>
       <span>Home</span>
     </button>
-    <button id="nav-calendar-btn" onclick="switchTab('calendar')" class="flex flex-col items-center text-slate-400 font-bold text-xs">
+    <button id="nav-calendar-btn" onclick="switchTab('calendar')" class="nav-btn flex flex-col items-center font-bold text-xs">
       <i class="fa-solid fa-calendar-days text-lg"></i>
       <span>Calendario</span>
+    </button>
+    <button id="nav-resources-btn" onclick="switchTab('resources')" class="nav-btn flex flex-col items-center font-bold text-xs">
+      <i class="fa-solid fa-link text-lg"></i>
+      <span>Risorse</span>
+    </button>
+    <button id="nav-settings-btn" onclick="switchTab('settings')" class="nav-btn flex flex-col items-center font-bold text-xs">
+      <i class="fa-solid fa-palette text-lg"></i>
+      <span>Modifica</span>
     </button>
   </nav>
 
@@ -170,6 +284,23 @@
         <div id="subtasks-input-container" class="hidden">
           <label class="block text-xs font-bold text-slate-600 mb-1">Sotto-Turni (Separati da virgola)</label>
           <input type="text" id="tab-subtasks" placeholder="Es. Cibo, Lettiera, Acqua" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- Messaggio personalizzato -->
+        <div class="pt-2 border-t">
+          <label class="block text-xs font-bold text-slate-600 mb-1">Messaggio personalizzato</label>
+          <input type="text" id="tab-custom-message" placeholder="Es. Ricordati di chiudere il cancello" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 app-accent-ring">
+          <p class="text-[10px] text-slate-400 mt-1">Appare sempre sulla scheda, sotto lo stato.</p>
+        </div>
+
+        <!-- Promemoria ricorrenti -->
+        <div class="pt-2 border-t">
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-bold text-slate-600">Promemoria ricorrenti</label>
+            <button type="button" onclick="addReminderRow()" class="text-[11px] app-accent-text font-bold hover:underline">+ Aggiungi</button>
+          </div>
+          <p class="text-[10px] text-slate-400 mb-2">Es. "Esporre l'umido" ogni martedì e venerdì alle 20:00.</p>
+          <div id="reminders-editor-container" class="space-y-2"></div>
         </div>
 
         <div>
@@ -285,6 +416,37 @@
     </div>
   </div>
 
+  <!-- MODALE RISORSA -->
+  <div id="resource-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 id="resource-modal-title" class="text-lg font-bold text-slate-800">🔗 Aggiungi Risorsa</h2>
+        <button onclick="closeResourceModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <div class="space-y-3">
+        <input type="hidden" id="editing-resource-id">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Nome</label>
+          <input type="text" id="resource-name" placeholder="Es. Bolletta luce, Regolamento condominio..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 app-accent-ring">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Link (URL)</label>
+          <input type="url" id="resource-url" placeholder="https://..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 app-accent-ring">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Emoji / Icona</label>
+          <input type="text" id="resource-emoji" value="🔗" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 app-accent-ring text-center text-xl">
+        </div>
+        <div class="space-y-2 pt-2">
+          <button onclick="saveResource()" class="w-full app-accent-bg text-white py-2.5 rounded-xl text-sm font-bold active:scale-95 transition-all">Salva Risorsa</button>
+          <button id="delete-resource-btn" onclick="deleteResourceFromModal()" class="w-full bg-rose-50 text-rose-600 border border-rose-200 py-2 rounded-xl text-xs font-bold hover:bg-rose-100 hidden">🗑️ Elimina Risorsa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDC6wlqz4ARaREum8gXiklq1GvyF1JdpgQ",
@@ -301,8 +463,13 @@
       banner.classList.remove('hidden');
     }
 
-    try { firebase.initializeApp(firebaseConfig); } catch (e) { showError("Errore Init: " + e.message); }
-    const db = firebase.firestore();
+    let db = null;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch (e) {
+      showError("Errore Firebase: " + e.message + " — controlla la connessione o che gli script Firebase siano caricati correttamente.");
+    }
 
     const states = [
       { color: 'bg-emerald-500', text: 'Tutto OK' },
@@ -320,11 +487,114 @@
     let currentStatusData = {};
     let customTabsList = [];
     let hiddenTabsList = [];
+    let defaultTabOverrides = {};
     let currentActiveListTab = null;
     let currentActiveSubtasksTab = null;
     let selectedDateStr = new Date().toISOString().split('T')[0];
     let selectedIconClass = 'fa-cat';
     let calendarEvents = [];
+    let resourcesList = [];
+    let editingReminders = [];
+    let editingResourceId = null;
+
+    const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+
+    const defaultTheme = {
+      primaryColor: '#4f46e5',
+      bgColor: '#f1f5f9',
+      bgImage: '',
+      font: "'Inter', sans-serif",
+      texts: {
+        title: '🐗 Casa Cinghiala',
+        subtitle: 'Sacro Capriolo Pistolero 🦌',
+        addTabBtn: 'Aggiungi Tab Personalizzato'
+      }
+    };
+
+    // Unisce le tab di default (filtrate/nascoste) con le loro personalizzazioni salvate, più le tab personalizzate
+    function getAllTabs() {
+      const visibleDefaults = defaultTabs
+        .filter(t => !hiddenTabsList.includes(t.id))
+        .map(t => ({ ...t, ...(defaultTabOverrides[t.id] || {}) }));
+      return [...visibleDefaults, ...customTabsList];
+    }
+
+    // Applica tema (colori, sfondo, font, testi) all'interfaccia
+    function applyTheme(theme) {
+      const t = {
+        ...defaultTheme,
+        ...(theme || {}),
+        texts: { ...defaultTheme.texts, ...((theme && theme.texts) || {}) }
+      };
+      document.documentElement.style.setProperty('--app-primary', t.primaryColor);
+      document.documentElement.style.setProperty('--app-bg', t.bgColor);
+      document.documentElement.style.setProperty('--app-bg-image', t.bgImage ? `url('${t.bgImage}')` : 'none');
+      document.documentElement.style.setProperty('--app-font', t.font);
+      document.getElementById('app-title').innerText = t.texts.title;
+      document.getElementById('app-subtitle').innerText = t.texts.subtitle;
+      document.getElementById('add-tab-btn-label').innerText = t.texts.addTabBtn;
+    }
+
+    // Popola il form della pagina "Modifica" con il tema attuale
+    function loadSettingsForm() {
+      const t = {
+        ...defaultTheme,
+        ...(currentStatusData.theme || {}),
+        texts: { ...defaultTheme.texts, ...((currentStatusData.theme && currentStatusData.theme.texts) || {}) }
+      };
+      document.getElementById('theme-primary-color').value = t.primaryColor;
+      document.getElementById('theme-bg-color').value = t.bgColor;
+      document.getElementById('theme-bg-image').value = t.bgImage || '';
+      document.getElementById('theme-font-select').value = t.font;
+      document.getElementById('theme-title-input').value = t.texts.title;
+      document.getElementById('theme-subtitle-input').value = t.texts.subtitle;
+      document.getElementById('theme-addtab-input').value = t.texts.addTabBtn;
+      previewBgImage();
+    }
+
+    // Anteprima immagine di sfondo nella pagina Modifica
+    function previewBgImage() {
+      const url = document.getElementById('theme-bg-image').value.trim();
+      const wrap = document.getElementById('bg-image-preview-wrap');
+      const img = document.getElementById('bg-image-preview');
+      if (url) {
+        img.src = url;
+        wrap.classList.remove('hidden');
+      } else {
+        img.src = '';
+        wrap.classList.add('hidden');
+      }
+    }
+
+    function clearBgImage() {
+      document.getElementById('theme-bg-image').value = '';
+      previewBgImage();
+    }
+
+    function saveTheme() {
+      const theme = {
+        primaryColor: document.getElementById('theme-primary-color').value,
+        bgColor: document.getElementById('theme-bg-color').value,
+        bgImage: document.getElementById('theme-bg-image').value.trim(),
+        font: document.getElementById('theme-font-select').value,
+        texts: {
+          title: document.getElementById('theme-title-input').value.trim() || defaultTheme.texts.title,
+          subtitle: document.getElementById('theme-subtitle-input').value.trim() || defaultTheme.texts.subtitle,
+          addTabBtn: document.getElementById('theme-addtab-input').value.trim() || defaultTheme.texts.addTabBtn
+        }
+      };
+      db.collection('casa').doc('stati').update({ theme }).catch(err => showError("Errore salvataggio tema: " + err.message));
+    }
+
+    function resetTheme() {
+      if (!confirm("Ripristinare l'aspetto predefinito dell'app?")) return;
+      db.collection('casa').doc('stati').update({ theme: defaultTheme }).then(() => {
+        loadSettingsForm();
+      }).catch(err => showError("Errore reset tema: " + err.message));
+    }
+
+    // Applica subito i valori predefiniti, così l'app è già leggibile prima che arrivino i dati da Firestore
+    applyTheme(defaultTheme);
 
     // Helper: Formattazione timestamp "fatto alle..."
     function formatLastDone(timestamp) {
@@ -343,64 +613,36 @@
       }
     }
 
-    // 1. CAMBIO STATO CANCELLO
-    function toggleGate() {
-      const isCurrentlyOpen = currentStatusData.gateOpen || false;
-      const nextState = !isCurrentlyOpen;
-
-      db.collection('casa').doc('stati').update({ gateOpen: nextState }).catch(err => {
-        showError("Errore aggiornamento cancello: " + err.message);
-      });
-    }
-
-    function updateGateButtonUI(isOpen) {
-      const btn = document.getElementById('gate-toggle-btn');
-      const icon = document.getElementById('gate-btn-icon');
-      const text = document.getElementById('gate-btn-text');
-
-      if (isOpen) {
-        btn.className = "bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all";
-        icon.className = "fa-solid fa-door-open text-sm";
-        text.innerText = "Aperto 🔓";
-      } else {
-        btn.className = "bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all";
-        icon.className = "fa-solid fa-door-closed text-sm";
-        text.innerText = "Chiuso 🔒";
-      }
-    }
-
     // 2. NAVIGAZIONE TAB
+    const PAGES = ['home', 'calendar', 'resources', 'settings'];
     function switchTab(page) {
-      if(page === 'home') {
-        document.getElementById('page-home').classList.remove('hidden');
-        document.getElementById('page-calendar').classList.add('hidden');
-        document.getElementById('nav-home-btn').className = "flex flex-col items-center text-indigo-600 font-bold text-xs";
-        document.getElementById('nav-calendar-btn').className = "flex flex-col items-center text-slate-400 font-bold text-xs";
-      } else {
-        document.getElementById('page-home').classList.add('hidden');
-        document.getElementById('page-calendar').classList.remove('hidden');
-        document.getElementById('nav-home-btn').className = "flex flex-col items-center text-slate-400 font-bold text-xs";
-        document.getElementById('nav-calendar-btn').className = "flex flex-col items-center text-indigo-600 font-bold text-xs";
-        renderCalendar();
-      }
+      PAGES.forEach(p => {
+        document.getElementById(`page-${p}`).classList.toggle('hidden', p !== page);
+        document.getElementById(`nav-${p}-btn`).classList.toggle('active', p === page);
+      });
+      if (page === 'calendar') renderCalendar();
+      if (page === 'settings') loadSettingsForm();
     }
 
     // 3. ASCOLTO STATI E RESET AUTOMATICO
-    db.collection('casa').doc('stati').onSnapshot(doc => {
-      if (doc.exists) {
-        currentStatusData = doc.data();
-        customTabsList = currentStatusData.customTabs || [];
-        hiddenTabsList = currentStatusData.hiddenTabs || [];
-        
-        updateGateButtonUI(currentStatusData.gateOpen || false);
-        checkAutoReset();
-        renderGrid();
-        
-        if (currentActiveSubtasksTab) renderSubtasksModal();
-      } else {
-        db.collection('casa').doc('stati').set({ spesa: 0, monnezza: 0, orto: 0, pulizie: 0, gateOpen: false, customTabs: [], hiddenTabs: [] });
-      }
-    });
+    if (db) {
+      db.collection('casa').doc('stati').onSnapshot(doc => {
+        if (doc.exists) {
+          currentStatusData = doc.data();
+          customTabsList = currentStatusData.customTabs || [];
+          hiddenTabsList = currentStatusData.hiddenTabs || [];
+          defaultTabOverrides = currentStatusData.defaultTabOverrides || {};
+
+          applyTheme(currentStatusData.theme || defaultTheme);
+          checkAutoReset();
+          renderGrid();
+          
+          if (currentActiveSubtasksTab) renderSubtasksModal();
+        } else {
+          db.collection('casa').doc('stati').set({ spesa: 0, monnezza: 0, orto: 0, pulizie: 0, customTabs: [], hiddenTabs: [], defaultTabOverrides: {}, theme: defaultTheme });
+        }
+      }, err => showError("Errore lettura dati: " + err.message));
+    }
 
     // Controllo Periodico Auto Reset (a tempo o a orario)
     function checkAutoReset() {
@@ -409,8 +651,7 @@
       const todayStr = now.toISOString().split('T')[0];
       const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       
-      const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
-      const allTabs = [...visibleDefaults, ...customTabsList];
+      const allTabs = getAllTabs();
       let updates = {};
       let resetOccurred = false;
 
@@ -450,12 +691,63 @@
     // Esegue il controllo ogni 30 secondi
     setInterval(checkAutoReset, 30000);
 
+    // Calcola il prossimo promemoria di una tab (o segnala se è "dovuto ora")
+    // reminder: { days: [0..6] (0=Lun...6=Dom), time: "HH:MM", message: "..." }
+    function getNextReminderOccurrence(tab) {
+      const reminders = tab.reminders || [];
+      if (reminders.length === 0) return null;
+
+      const now = new Date();
+      const nowDow = (now.getDay() + 6) % 7; // converte 0=Dom in 0=Lun
+      let best = null; // { diffMinutes, dayOffset, reminder }
+
+      reminders.forEach(rem => {
+        if (!rem.days || rem.days.length === 0 || !rem.time) return;
+        const [h, m] = rem.time.split(':').map(Number);
+        rem.days.forEach(day => {
+          let dayOffset = (day - nowDow + 7) % 7;
+          const occurrence = new Date(now);
+          occurrence.setDate(now.getDate() + dayOffset);
+          occurrence.setHours(h, m, 0, 0);
+          let diffMinutes = (occurrence.getTime() - now.getTime()) / 60000;
+          if (diffMinutes < -60) {
+            // già passato da più di un'ora oggi: considera l'occorrenza della prossima settimana
+            dayOffset += 7;
+            occurrence.setDate(occurrence.getDate() + 7);
+            diffMinutes = (occurrence.getTime() - now.getTime()) / 60000;
+          }
+          if (best === null || diffMinutes < best.diffMinutes) {
+            best = { diffMinutes, reminder: rem, occurrence };
+          }
+        });
+      });
+
+      if (!best) return null;
+      const isDueNow = best.diffMinutes <= 0 && best.diffMinutes >= -60;
+      const dayLabel = DAY_LABELS[(best.occurrence.getDay() + 6) % 7];
+      const timeLabel = best.occurrence.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+      return { isDueNow, dayLabel, timeLabel, message: best.reminder.message || '' };
+    }
+
+    function renderReminderBadge(tab) {
+      const next = getNextReminderOccurrence(tab);
+      if (!next) return '';
+      const label = next.isDueNow
+        ? `🔔 Ora: ${next.message || tab.name}`
+        : `⏰ ${next.dayLabel} ${next.timeLabel}${next.message ? ' - ' + next.message : ''}`;
+      return `<span class="reminder-badge ${next.isDueNow ? 'due' : ''} text-white text-[9px] font-bold px-2 py-0.5 rounded-full block mt-1 truncate max-w-full">${label}</span>`;
+    }
+
+    function renderCustomMessage(tab) {
+      if (!tab.customMessage) return '';
+      return `<span class="text-[9px] text-white/90 italic pt-0.5 block truncate max-w-full">💬 ${tab.customMessage}</span>`;
+    }
+
     function renderGrid() {
       const grid = document.getElementById('status-grid');
       grid.innerHTML = '';
       
-      const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
-      const allTabs = [...visibleDefaults, ...customTabsList];
+      const allTabs = getAllTabs();
 
       allTabs.forEach(tab => {
         const col = document.createElement('div');
@@ -472,6 +764,8 @@
               <span class="font-bold text-base leading-tight">${tab.name}</span>
               <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
               <span class="text-[9px] text-white/80 font-medium pt-0.5"><i class="fa-regular fa-clock mr-1"></i>${lastDoneText}</span>
+              ${renderCustomMessage(tab)}
+              ${renderReminderBadge(tab)}
             </button>
             <button onclick="openDynamicListModal('${tab.id}', '${tab.name}')" class="absolute bottom-2 left-2 right-2 bg-black/20 active:bg-black/40 text-white text-xs font-semibold py-1 rounded-xl backdrop-blur-md transition-all flex items-center justify-center gap-1">
               <i class="fa-solid fa-list-check"></i> Apri Lista
@@ -490,6 +784,8 @@
               <span class="font-bold text-base leading-tight">${tab.name}</span>
               <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${doneCount}/${subList.length} Fatti</span>
               <span class="text-[9px] text-white/80 font-medium pt-0.5"><i class="fa-regular fa-clock mr-1"></i>${lastDoneText}</span>
+              ${renderCustomMessage(tab)}
+              ${renderReminderBadge(tab)}
             </button>
             <button onclick="openCustomTabModal('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
           `;
@@ -501,6 +797,8 @@
               <span class="font-bold text-base leading-tight">${tab.name}</span>
               <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">${states[stateIdx].text}</span>
               <span class="text-[9px] text-white/80 font-medium pt-0.5"><i class="fa-regular fa-clock mr-1"></i>${lastDoneText}</span>
+              ${renderCustomMessage(tab)}
+              ${renderReminderBadge(tab)}
             </button>
             <button onclick="openCustomTabModal('${tab.id}')" class="absolute top-2 right-2 text-white/70 hover:text-white p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
           `;
@@ -528,8 +826,7 @@
       const deleteBtn = document.getElementById('delete-tab-btn');
       
       if (tabId) {
-        const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
-        const allTabs = [...visibleDefaults, ...customTabsList];
+        const allTabs = getAllTabs();
         const tab = allTabs.find(t => t.id === tabId);
         if (!tab) return;
 
@@ -543,6 +840,7 @@
         document.getElementById('tab-reset-mode').value = tab.resetMode || "hours";
         document.getElementById('tab-reset-hours').value = tab.resetHours || 12;
         document.getElementById('tab-reset-time').value = tab.resetTime || "04:00";
+        document.getElementById('tab-custom-message').value = tab.customMessage || '';
         
         toggleResetTimeInput();
 
@@ -553,6 +851,9 @@
           document.getElementById('subtasks-input-container').classList.add('hidden');
         }
 
+        editingReminders = JSON.parse(JSON.stringify(tab.reminders || []));
+        renderRemindersEditor();
+
         deleteBtn.classList.remove('hidden');
       } else {
         title.innerText = "➕ Tab Personalizzato";
@@ -562,12 +863,89 @@
         document.getElementById('tab-auto-reset').checked = false;
         document.getElementById('tab-reset-mode').value = "hours";
         document.getElementById('tab-reset-hours').value = 12;
+        document.getElementById('tab-custom-message').value = '';
         toggleResetTimeInput();
         toggleSubtasksInput();
+        editingReminders = [];
+        renderRemindersEditor();
         deleteBtn.classList.add('hidden');
       }
 
       modal.classList.replace('hidden', 'flex');
+    }
+
+    // Editor promemoria ricorrenti (all'interno del modale tab)
+    function renderRemindersEditor() {
+      const container = document.getElementById('reminders-editor-container');
+      container.innerHTML = '';
+      if (editingReminders.length === 0) {
+        container.innerHTML = `<p class="text-[10px] text-slate-400 italic">Nessun promemoria impostato.</p>`;
+        return;
+      }
+      editingReminders.forEach((rem, idx) => {
+        const row = document.createElement('div');
+        row.className = 'bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-2';
+
+        const daysRow = document.createElement('div');
+        daysRow.className = 'flex gap-1 justify-between';
+        DAY_LABELS.forEach((label, dayIdx) => {
+          const active = (rem.days || []).includes(dayIdx);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.innerText = label[0];
+          btn.title = label;
+          btn.className = `w-7 h-7 rounded-lg text-[10px] font-bold ${active ? 'app-accent-bg text-white' : 'bg-white border border-slate-300 text-slate-500'}`;
+          btn.onclick = () => toggleReminderDay(idx, dayIdx);
+          daysRow.appendChild(btn);
+        });
+        row.appendChild(daysRow);
+
+        const controlsRow = document.createElement('div');
+        controlsRow.className = 'flex gap-2 items-center';
+
+        const timeInput = document.createElement('input');
+        timeInput.type = 'time';
+        timeInput.value = rem.time || '20:00';
+        timeInput.className = 'border border-slate-300 rounded-lg px-2 py-1 text-xs w-24';
+        timeInput.oninput = (e) => { editingReminders[idx].time = e.target.value; };
+        controlsRow.appendChild(timeInput);
+
+        const msgInput = document.createElement('input');
+        msgInput.type = 'text';
+        msgInput.placeholder = 'Es. Esporre umido';
+        msgInput.value = rem.message || '';
+        msgInput.className = 'flex-1 border border-slate-300 rounded-lg px-2 py-1 text-xs';
+        msgInput.oninput = (e) => { editingReminders[idx].message = e.target.value; };
+        controlsRow.appendChild(msgInput);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+        removeBtn.className = 'text-rose-500 hover:text-rose-700 px-1 text-xs';
+        removeBtn.onclick = () => removeReminderRow(idx);
+        controlsRow.appendChild(removeBtn);
+
+        row.appendChild(controlsRow);
+        container.appendChild(row);
+      });
+    }
+
+    function addReminderRow() {
+      editingReminders.push({ days: [], time: '20:00', message: '' });
+      renderRemindersEditor();
+    }
+
+    function toggleReminderDay(remIdx, dayIdx) {
+      const rem = editingReminders[remIdx];
+      rem.days = rem.days || [];
+      const pos = rem.days.indexOf(dayIdx);
+      if (pos === -1) rem.days.push(dayIdx); else rem.days.splice(pos, 1);
+      renderRemindersEditor();
+    }
+
+    function removeReminderRow(idx) {
+      editingReminders.splice(idx, 1);
+      renderRemindersEditor();
     }
 
     function closeCustomTabModal() {
@@ -634,6 +1012,13 @@
       element.classList.replace('border-transparent', 'border-indigo-500');
     }
 
+    // Ripulisce i promemoria in editing: scarta righe senza giorni selezionati
+    function getCleanedReminders() {
+      return editingReminders
+        .filter(r => r.days && r.days.length > 0 && r.time)
+        .map(r => ({ days: [...r.days].sort(), time: r.time, message: (r.message || '').trim() }));
+    }
+
     function saveCustomTab() {
       const editingId = document.getElementById('editing-tab-id').value;
       const name = document.getElementById('tab-name').value.trim();
@@ -642,6 +1027,8 @@
       const resetMode = document.getElementById('tab-reset-mode').value;
       const resetHours = Number(document.getElementById('tab-reset-hours').value) || 12;
       const resetTime = document.getElementById('tab-reset-time').value;
+      const customMessage = document.getElementById('tab-custom-message').value.trim();
+      const reminders = getCleanedReminders();
 
       if (!name) return;
 
@@ -650,13 +1037,14 @@
 
       if (editingId) {
         if (isDefault) {
-          let idx = defaultTabs.findIndex(t => t.id === editingId);
-          if (idx !== -1) {
-            defaultTabs[idx].autoReset = autoReset;
-            defaultTabs[idx].resetMode = resetMode;
-            defaultTabs[idx].resetHours = resetHours;
-            defaultTabs[idx].resetTime = resetTime;
-          }
+          // Le tab predefinite non si rinominano/cambiano icona, ma le personalizzazioni
+          // (reset, messaggio, promemoria) vanno salvate come override persistente su Firestore.
+          let overrides = { ...defaultTabOverrides };
+          overrides[editingId] = { autoReset, resetMode, resetHours, resetTime, customMessage, reminders };
+          db.collection('casa').doc('stati').update({ defaultTabOverrides: overrides }).then(() => {
+            closeCustomTabModal();
+          }).catch(err => showError("Errore salvataggio tab: " + err.message));
+          return;
         } else {
           let idx = currentCustoms.findIndex(t => t.id === editingId);
           if (idx !== -1) {
@@ -666,6 +1054,8 @@
             currentCustoms[idx].resetMode = resetMode;
             currentCustoms[idx].resetHours = resetHours;
             currentCustoms[idx].resetTime = resetTime;
+            currentCustoms[idx].customMessage = customMessage;
+            currentCustoms[idx].reminders = reminders;
             if (currentCustoms[idx].type === 'subtasks') {
               const subInput = document.getElementById('tab-subtasks').value;
               currentCustoms[idx].subtasks = subInput ? subInput.split(',').map(s => s.trim()).filter(s => s) : [];
@@ -682,7 +1072,9 @@
           autoReset: autoReset,
           resetMode: resetMode,
           resetHours: resetHours,
-          resetTime: resetTime
+          resetTime: resetTime,
+          customMessage: customMessage,
+          reminders: reminders
         };
         if (type === 'subtasks') {
           const subInput = document.getElementById('tab-subtasks').value;
@@ -693,37 +1085,39 @@
 
       db.collection('casa').doc('stati').update({ customTabs: currentCustoms }).then(() => {
         closeCustomTabModal();
-      });
+      }).catch(err => showError("Errore salvataggio tab: " + err.message));
     }
 
     // 5. GESTIONE INQUILINI
-    db.collection('inquilini').onSnapshot(snapshot => {
-      const list = document.getElementById('roommates-list');
-      list.innerHTML = '';
-      if (snapshot.empty) {
-        list.innerHTML = `<p class="text-xs text-slate-400 italic">Nessun utente presente.</p>`;
-        return;
-      }
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const isPresent = data.present || false;
-        const tag = document.createElement('div');
-        
-        const bgClass = isPresent ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-300' : 'bg-slate-200 text-slate-600';
-        const dotColor = isPresent ? 'bg-emerald-200 animate-pulse' : 'bg-slate-400';
+    if (db) {
+      db.collection('inquilini').onSnapshot(snapshot => {
+        const list = document.getElementById('roommates-list');
+        list.innerHTML = '';
+        if (snapshot.empty) {
+          list.innerHTML = `<p class="text-xs text-slate-400 italic">Nessun utente presente.</p>`;
+          return;
+        }
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const isPresent = data.present || false;
+          const tag = document.createElement('div');
+          
+          const bgClass = isPresent ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-300' : 'bg-slate-200 text-slate-600';
+          const dotColor = isPresent ? 'bg-emerald-200 animate-pulse' : 'bg-slate-400';
 
-        tag.className = `${bgClass} text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-2 cursor-pointer transition-all active:scale-95`;
-        
-        tag.innerHTML = `
-          <span onclick="toggleRoommatePresence('${doc.id}', ${isPresent})" class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full ${dotColor}"></span>
-            <span>${data.name}</span>
-          </span>
-          <button onclick="event.stopPropagation(); deleteRoommate('${doc.id}')" class="opacity-60 hover:opacity-100 text-xs ml-1"><i class="fa-solid fa-xmark"></i></button>
-        `;
-        list.appendChild(tag);
-      });
-    });
+          tag.className = `${bgClass} text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-2 cursor-pointer transition-all active:scale-95`;
+          
+          tag.innerHTML = `
+            <span onclick="toggleRoommatePresence('${doc.id}', ${isPresent})" class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full ${dotColor}"></span>
+              <span>${data.name}</span>
+            </span>
+            <button onclick="event.stopPropagation(); deleteRoommate('${doc.id}')" class="opacity-60 hover:opacity-100 text-xs ml-1"><i class="fa-solid fa-xmark"></i></button>
+          `;
+          list.appendChild(tag);
+        });
+      }, err => showError("Errore lettura inquilini: " + err.message));
+    }
 
     function toggleRoommatePresence(id, currentPresence) {
       db.collection('inquilini').doc(id).update({ present: !currentPresence });
@@ -834,8 +1228,7 @@
 
     function renderSubtasksModal() {
       if (!currentActiveSubtasksTab) return;
-      const visibleDefaults = defaultTabs.filter(t => !hiddenTabsList.includes(t.id));
-      const allTabs = [...visibleDefaults, ...customTabsList];
+      const allTabs = getAllTabs();
       const tab = allTabs.find(t => t.id === currentActiveSubtasksTab);
       if (!tab) return;
 
@@ -1008,6 +1401,93 @@
       if (confirm('Vuoi eliminare questo evento dal calendario?')) {
         db.collection('calendario').doc(id).delete();
       }
+    }
+
+    // 9. GESTIONE RISORSE (LINK UTILI)
+    if (db) {
+      db.collection('risorse').onSnapshot(snapshot => {
+        resourcesList = [];
+        snapshot.forEach(doc => resourcesList.push({ id: doc.id, ...doc.data() }));
+        renderResourcesList();
+      }, err => showError("Errore lettura risorse: " + err.message));
+    }
+
+    function renderResourcesList() {
+      const list = document.getElementById('resources-list');
+      list.innerHTML = '';
+      if (resourcesList.length === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-400 italic">Nessuna risorsa aggiunta.</p>`;
+        return;
+      }
+      resourcesList.forEach(res => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-xl p-2.5';
+        row.innerHTML = `
+          <a href="${res.url}" target="_blank" rel="noopener noreferrer" class="flex-1 flex items-center gap-2 text-xs font-bold text-slate-700 hover:app-accent-text">
+            <span class="text-lg">${res.icon || '🔗'}</span>
+            <span class="truncate">${res.name}</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400 ml-auto"></i>
+          </a>
+          <button onclick="openResourceModal('${res.id}')" class="text-slate-400 hover:text-slate-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    function openResourceModal(resourceId = null) {
+      editingResourceId = resourceId;
+      const title = document.getElementById('resource-modal-title');
+      const deleteBtn = document.getElementById('delete-resource-btn');
+      document.getElementById('editing-resource-id').value = resourceId || '';
+
+      if (resourceId) {
+        const res = resourcesList.find(r => r.id === resourceId);
+        if (!res) return;
+        title.innerText = '✏️ Modifica Risorsa';
+        document.getElementById('resource-name').value = res.name || '';
+        document.getElementById('resource-url').value = res.url || '';
+        document.getElementById('resource-emoji').value = res.icon || '🔗';
+        deleteBtn.classList.remove('hidden');
+      } else {
+        title.innerText = '🔗 Aggiungi Risorsa';
+        document.getElementById('resource-name').value = '';
+        document.getElementById('resource-url').value = '';
+        document.getElementById('resource-emoji').value = '🔗';
+        deleteBtn.classList.add('hidden');
+      }
+
+      document.getElementById('resource-modal').classList.replace('hidden', 'flex');
+    }
+
+    function closeResourceModal() {
+      document.getElementById('resource-modal').classList.replace('flex', 'hidden');
+      editingResourceId = null;
+    }
+
+    function saveResource() {
+      const name = document.getElementById('resource-name').value.trim();
+      let url = document.getElementById('resource-url').value.trim();
+      const icon = document.getElementById('resource-emoji').value.trim() || '🔗';
+
+      if (!name || !url) return;
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+      const data = { name, url, icon };
+
+      if (editingResourceId) {
+        db.collection('risorse').doc(editingResourceId).update(data).then(closeResourceModal)
+          .catch(err => showError("Errore salvataggio risorsa: " + err.message));
+      } else {
+        db.collection('risorse').add(data).then(closeResourceModal)
+          .catch(err => showError("Errore salvataggio risorsa: " + err.message));
+      }
+    }
+
+    function deleteResourceFromModal() {
+      if (!editingResourceId) return;
+      if (!confirm('Vuoi eliminare questa risorsa?')) return;
+      db.collection('risorse').doc(editingResourceId).delete().then(closeResourceModal)
+        .catch(err => showError("Errore eliminazione risorsa: " + err.message));
     }
   </script>
 </body>
